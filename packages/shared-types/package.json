@@ -1,0 +1,22 @@
+{
+  "name": "@tobetake/shared-types",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared TypeScript interfaces and types for To Be Take monorepo",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "@tobetake/eslint-config": "workspace:*",
+    "@tobetake/tsconfig": "workspace:*",
+    "eslint": "^8.57.1",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.2"
+  }
+}

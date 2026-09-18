@@ -1,0 +1,93 @@
+// Prisma schema for To Be Take full-stack monorepo
+// Sprint 1 — Database Foundation
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+/// User Roles defining platform access levels (Super Admin, Admin, Seller, Buyer)
+model UserRole {
+  id          Int      @id @default(autoincrement()) @map("id")
+  name        String   @unique @map("name") @db.VarChar(50)
+  code        String   @unique @map("code") @db.VarChar(20)
+  description String?  @map("description") @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  users User[]
+
+  @@map("user_roles")
+}
+
+/// Internal departments for administrative and organizational hierarchy
+model Department {
+  id          Int      @id @default(autoincrement()) @map("id")
+  name        String   @map("name") @db.VarChar(100)
+  code        String   @unique @map("code") @db.VarChar(20)
+  description String?  @map("description") @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  users User[]
+
+  @@map("departments")
+}
+
+/// User accounts across all roles with security, audit, and soft-delete support
+model User {
+  id                  String     @id @default(uuid()) @map("id") @db.Uuid
+  username            String     @unique @map("username") @db.VarChar(50)
+  email               String     @unique @map("email") @db.VarChar(255)
+  password            String     @map("password") @db.VarChar(255)
+  firstName           String     @map("first_name") @db.VarChar(100)
+  lastName            String     @map("last_name") @db.VarChar(100)
+  roleId              Int        @map("role_id")
+  status              UserStatus @default(ACTIVE) @map("status")
+  isEmailVerified     Boolean    @default(false) @map("is_email_verified")
+  isMobileVerified    Boolean    @default(false) @map("is_mobile_verified")
+  lastLogin           DateTime?  @map("last_login")
+  passwordChangedAt   DateTime?  @map("password_changed_at")
+  createdBy           String?    @map("created_by") @db.Uuid
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedBy           String?    @map("updated_by") @db.Uuid
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+  isDeleted           Boolean    @default(false) @map("is_deleted")
+  deletedAt           DateTime?  @map("deleted_at")
+  departmentId        Int?       @map("department_id")
+  designation         String?    @map("designation") @db.VarChar(100)
+  storeName           String?    @map("store_name") @db.VarChar(100)
+  businessCategory    String?    @map("business_category") @db.VarChar(100)
+  failedLoginAttempts Int        @default(0) @map("failed_login_attempts")
+  isLocked            Boolean    @default(false) @map("is_locked")
+  lockedUntil         DateTime?  @map("locked_until")
+
+  // Relations
+  role         UserRole    @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  creator      User?       @relation("UserCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  createdUsers User[]      @relation("UserCreatedBy")
+  updater      User?       @relation("UserUpdatedBy", fields: [updatedBy], references: [id], onDelete: SetNull)
+  updatedUsers User[]      @relation("UserUpdatedBy")
+
+  @@index([roleId])
+  @@index([departmentId])
+  @@index([status])
+  @@index([isDeleted])
+  @@index([email, isDeleted])
+  @@index([username, isDeleted])
+  @@map("users")
+}

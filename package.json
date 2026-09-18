@@ -1,0 +1,32 @@
+{
+  "name": "to-be-take",
+  "version": "0.1.0",
+  "private": true,
+  "description": "To Be Take - Full-Stack Monorepo",
+  "packageManager": "pnpm@12.4.1",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rimraf node_modules",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "pnpm --filter @tobetake/database db:migrate",
+    "db:migrate:deploy": "pnpm --filter @tobetake/database db:migrate:deploy",
+    "db:push": "pnpm --filter @tobetake/database db:push",
+    "db:seed": "pnpm --filter @tobetake/database db:seed",
+    "db:studio": "pnpm --filter @tobetake/database db:studio"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    "rimraf": "^6.0.1",
+    "turbo": "^2.4.4",
+    "typescript": "^5.8.2"
+  }
+}

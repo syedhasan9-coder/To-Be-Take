@@ -1,0 +1,59 @@
+{
+  "name": "@tobetake/database",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Database schema, migrations, and Prisma client for To Be Take monorepo",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "lint": "eslint \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "clean": "rimraf dist src/generated"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.4.15",
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^3.0.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@tobetake/eslint-config": "workspace:*",
+    "@tobetake/tsconfig": "workspace:*",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.9",
+    "dotenv": "^16.4.7",
+    "eslint": "^8.57.1",
+    "jest": "^29.7.0",
+    "prisma": "^5.22.0",
+    "rimraf": "^6.0.1",
+    "ts-jest": "^29.2.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "testEnvironment": "node"
+  }
+}
