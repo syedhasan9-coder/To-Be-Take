@@ -4,22 +4,30 @@
     "slug": "to-be-take",
     "version": "0.1.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "splash": {
       "resizeMode": "contain",
-      "backgroundColor": "#0a0f1d"
+      "backgroundColor": "#14291f"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.tobetake.mobile",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#0a0f1d"
-      }
+        "backgroundColor": "#14291f"
+      },
+      "permissions": ["INTERNET"]
     },
     "web": {
       "bundler": "metro"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "fcf5f96c-2f8a-40ee-ba2c-0a0eefa7ec70"
+      }
+    },
+    "owner": "syedhasan1031"
   }
 }
