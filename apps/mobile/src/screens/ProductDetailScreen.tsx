@@ -23,12 +23,14 @@ interface ProductDetailScreenProps {
   onNavigateBack: () => void;
   onNavigateToCart: () => void;
   onNavigateToCheckout?: () => void;
+  onNavigateToSignIn?: () => void;
 }
 
 export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
   productId,
   onNavigateBack,
   onNavigateToCart,
+  onNavigateToSignIn,
 }) => {
   const { isAuthenticated } = useAuth();
   const { addToCart, toggleWishlist, isWishlisted, cartCount } = useCustomerCart();
@@ -64,13 +66,28 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
 
   const handleAddToCart = async () => {
     if (!product) return;
+    if (!isAuthenticated) {
+      Alert.alert('Sign In Required', 'Please sign in to add items to your shopping cart.', [
+        { text: 'Cancel', style: 'cancel' },
+        ...(onNavigateToSignIn ? [{ text: 'Sign In', onPress: onNavigateToSignIn }] : []),
+      ]);
+      return;
+    }
     setIsAdding(true);
     await addToCart(product.id, quantity);
     setIsAdding(false);
+    Alert.alert('Added to Cart', `${product.name} added to your shopping cart.`);
   };
 
   const handleBuyNow = async () => {
     if (!product) return;
+    if (!isAuthenticated) {
+      Alert.alert('Sign In Required', 'Please sign in to proceed with your order.', [
+        { text: 'Cancel', style: 'cancel' },
+        ...(onNavigateToSignIn ? [{ text: 'Sign In', onPress: onNavigateToSignIn }] : []),
+      ]);
+      return;
+    }
     setIsAdding(true);
     await addToCart(product.id, quantity);
     setIsAdding(false);

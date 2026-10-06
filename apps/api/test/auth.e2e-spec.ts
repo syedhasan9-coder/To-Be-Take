@@ -1,11 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import * as bcrypt from 'bcryptjs';
 import { AppModule } from '../src/app.module';
 import { PrismaService, UserStatus } from '@tobetake/database';
 
 describe('Auth & Departments (e2e)', () => {
   let app: INestApplication;
+
+  const mockSuperAdminRole = {
+    id: 1,
+    name: 'Super Admin',
+    code: 'SPADMIN',
+    description: 'Super Administrator with full platform privileges',
+  };
 
   const mockAdminRole = {
     id: 2,
@@ -46,6 +54,7 @@ describe('Auth & Departments (e2e)', () => {
     },
     userRole: {
       findUnique: jest.fn().mockImplementation(({ where }) => {
+        if (where.code === 'SPADMIN') return Promise.resolve(mockSuperAdminRole);
         if (where.code === 'ADMIN') return Promise.resolve(mockAdminRole);
         if (where.code === 'VENDOR') return Promise.resolve(mockSellerRole);
         if (where.code === 'CUST') return Promise.resolve(mockBuyerRole);
@@ -53,6 +62,193 @@ describe('Auth & Departments (e2e)', () => {
       }),
     },
     user: {
+      findFirst: jest.fn().mockImplementation(({ where }) => {
+        const identifier = where?.OR?.[0]?.username || where?.OR?.[1]?.email;
+        if (identifier === 'superadmin' || identifier === 'superadmin@tobetake.dev') {
+          return Promise.resolve({
+            id: 'superadmin-uuid',
+            username: 'superadmin',
+            email: 'superadmin@tobetake.dev',
+            password: bcrypt.hashSync('SuperAdmin@2026!', 10),
+            firstName: 'Super',
+            lastName: 'Admin',
+            roleId: mockSuperAdminRole.id,
+            role: mockSuperAdminRole,
+            departmentId: 1,
+            department: mockDepartments[0],
+            designation: 'System Administrator',
+            storeName: null,
+            businessCategory: null,
+            status: UserStatus.ACTIVE,
+            isEmailVerified: true,
+            isMobileVerified: true,
+            failedLoginAttempts: 0,
+            isLocked: false,
+            lockedUntil: null,
+            isDeleted: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+        if (identifier === 'admin_tariq' || identifier === 'tariq.admin@tobetake.dev') {
+          return Promise.resolve({
+            id: 'admin-uuid',
+            username: 'admin_tariq',
+            email: 'tariq.admin@tobetake.dev',
+            password: bcrypt.hashSync('Password123!', 10),
+            firstName: 'Tariq',
+            lastName: 'Mehmood',
+            roleId: mockAdminRole.id,
+            role: mockAdminRole,
+            departmentId: 1,
+            department: mockDepartments[0],
+            designation: 'Operations Lead',
+            storeName: null,
+            businessCategory: null,
+            status: UserStatus.ACTIVE,
+            isEmailVerified: false,
+            isMobileVerified: false,
+            failedLoginAttempts: 0,
+            isLocked: false,
+            lockedUntil: null,
+            isDeleted: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+        if (identifier === 'seller_fatima' || identifier === 'fatima.seller@tobetake.dev') {
+          return Promise.resolve({
+            id: 'seller-uuid',
+            username: 'seller_fatima',
+            email: 'fatima.seller@tobetake.dev',
+            password: bcrypt.hashSync('Password123!', 10),
+            firstName: 'Fatima',
+            lastName: 'Khan',
+            roleId: mockSellerRole.id,
+            role: mockSellerRole,
+            departmentId: null,
+            department: null,
+            designation: null,
+            storeName: 'Fatima Boutique',
+            businessCategory: 'Fashion & Apparel',
+            status: UserStatus.ACTIVE,
+            isEmailVerified: false,
+            isMobileVerified: false,
+            failedLoginAttempts: 0,
+            isLocked: false,
+            lockedUntil: null,
+            isDeleted: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+        if (identifier === 'buyer_bilal' || identifier === 'bilal.buyer@tobetake.dev') {
+          return Promise.resolve({
+            id: 'buyer-uuid',
+            username: 'buyer_bilal',
+            email: 'bilal.buyer@tobetake.dev',
+            password: bcrypt.hashSync('Password123!', 10),
+            firstName: 'Bilal',
+            lastName: 'Ahmed',
+            roleId: mockBuyerRole.id,
+            role: mockBuyerRole,
+            departmentId: null,
+            department: null,
+            designation: null,
+            storeName: null,
+            businessCategory: null,
+            status: UserStatus.ACTIVE,
+            isEmailVerified: false,
+            isMobileVerified: false,
+            failedLoginAttempts: 0,
+            isLocked: false,
+            lockedUntil: null,
+            isDeleted: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+        if (identifier === 'inactive_admin') {
+          return Promise.resolve({
+            id: 'inactive-admin-uuid',
+            username: 'inactive_admin',
+            email: 'inactive@tobetake.dev',
+            password: bcrypt.hashSync('Password123!', 10),
+            firstName: 'Inactive',
+            lastName: 'Admin',
+            roleId: mockAdminRole.id,
+            role: mockAdminRole,
+            departmentId: 1,
+            department: mockDepartments[0],
+            designation: 'Operations Lead',
+            storeName: null,
+            businessCategory: null,
+            status: UserStatus.INACTIVE,
+            isEmailVerified: false,
+            isMobileVerified: false,
+            failedLoginAttempts: 0,
+            isLocked: false,
+            lockedUntil: null,
+            isDeleted: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+        if (identifier === 'suspended_admin') {
+          return Promise.resolve({
+            id: 'suspended-admin-uuid',
+            username: 'suspended_admin',
+            email: 'suspended@tobetake.dev',
+            password: bcrypt.hashSync('Password123!', 10),
+            firstName: 'Suspended',
+            lastName: 'Admin',
+            roleId: mockAdminRole.id,
+            role: mockAdminRole,
+            departmentId: 1,
+            department: mockDepartments[0],
+            designation: 'Operations Lead',
+            storeName: null,
+            businessCategory: null,
+            status: UserStatus.SUSPENDED,
+            isEmailVerified: false,
+            isMobileVerified: false,
+            failedLoginAttempts: 0,
+            isLocked: false,
+            lockedUntil: null,
+            isDeleted: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+        if (identifier === 'locked_admin') {
+          return Promise.resolve({
+            id: 'locked-admin-uuid',
+            username: 'locked_admin',
+            email: 'locked@tobetake.dev',
+            password: bcrypt.hashSync('Password123!', 10),
+            firstName: 'Locked',
+            lastName: 'Admin',
+            roleId: mockAdminRole.id,
+            role: mockAdminRole,
+            departmentId: 1,
+            department: mockDepartments[0],
+            designation: 'Operations Lead',
+            storeName: null,
+            businessCategory: null,
+            status: UserStatus.ACTIVE,
+            isEmailVerified: false,
+            isMobileVerified: false,
+            failedLoginAttempts: 5,
+            isLocked: true,
+            lockedUntil: new Date(Date.now() + 1000 * 60 * 60),
+            isDeleted: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+        return Promise.resolve(null);
+      }),
+      update: jest.fn().mockResolvedValue({}),
       findUnique: jest.fn().mockImplementation(({ where }) => {
         if (where.username === 'existing_user' || where.email === 'existing@tobetake.dev') {
           return Promise.resolve({
@@ -108,6 +304,9 @@ describe('Auth & Departments (e2e)', () => {
   };
 
   beforeAll(async () => {
+    process.env.AUTH_RATE_LIMIT_MAX = '500';
+    process.env.ADMIN_RATE_LIMIT_MAX = '500';
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
@@ -150,8 +349,8 @@ describe('Auth & Departments (e2e)', () => {
       username: 'new_admin',
       email: 'new.admin@tobetake.dev',
       password: 'SecurePassword123!',
-      firstName: 'Sarah',
-      lastName: 'Connor',
+      firstName: 'Sana',
+      lastName: 'Mirza',
       departmentId: 2,
       designation: 'Operations Director',
     };
@@ -168,8 +367,8 @@ describe('Auth & Departments (e2e)', () => {
             id: 'new-admin-uuid',
             username: 'new_admin',
             email: 'new.admin@tobetake.dev',
-            firstName: 'Sarah',
-            lastName: 'Connor',
+            firstName: 'Sana',
+            lastName: 'Mirza',
             role: 'Admin',
             roleCode: 'ADMIN',
             department: 'Vendor Management',
@@ -334,9 +533,9 @@ describe('Auth & Departments (e2e)', () => {
       username: 'new_seller',
       email: 'new.seller@tobetake.dev',
       password: 'SecurePassword123!',
-      firstName: 'Emily',
-      lastName: 'Blunt',
-      storeName: 'Emily Fashion Store',
+      firstName: 'Zainab',
+      lastName: 'Raza',
+      storeName: 'Zainab Fashion Store',
       businessCategory: 'Fashion & Apparel',
     };
 
@@ -352,11 +551,11 @@ describe('Auth & Departments (e2e)', () => {
             id: 'new-seller-uuid',
             username: 'new_seller',
             email: 'new.seller@tobetake.dev',
-            firstName: 'Emily',
-            lastName: 'Blunt',
+            firstName: 'Zainab',
+            lastName: 'Raza',
             role: 'Seller',
             roleCode: 'VENDOR',
-            storeName: 'Emily Fashion Store',
+            storeName: 'Zainab Fashion Store',
             businessCategory: 'Fashion & Apparel',
             status: 'ACTIVE',
             isEmailVerified: false,
@@ -507,8 +706,8 @@ describe('Auth & Departments (e2e)', () => {
       email: 'new.buyer@tobetake.dev',
       password: 'SecurePassword123!',
       confirmPassword: 'SecurePassword123!',
-      firstName: 'Bruce',
-      lastName: 'Wayne',
+      firstName: 'Bilal',
+      lastName: 'Ahmed',
     };
 
     it('should register a new customer/buyer successfully (201 Created)', () => {
@@ -523,8 +722,8 @@ describe('Auth & Departments (e2e)', () => {
             id: 'new-buyer-uuid',
             username: 'new_buyer',
             email: 'new.buyer@tobetake.dev',
-            firstName: 'Bruce',
-            lastName: 'Wayne',
+            firstName: 'Bilal',
+            lastName: 'Ahmed',
             role: 'Buyer',
             roleCode: 'CUST',
             department: null,
@@ -692,6 +891,270 @@ describe('Auth & Departments (e2e)', () => {
               expect.stringContaining('Last name must be at least 2 characters long'),
             ]),
           );
+        });
+    });
+  });
+
+  describe('POST /api/auth/login', () => {
+    it('should successfully authenticate Super Admin with username', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          username: 'superadmin',
+          password: 'SuperAdmin@2026!',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.message).toBe('Login successful');
+          expect(res.body.data).toBeDefined();
+          expect(res.body.data.id).toBe('superadmin-uuid');
+          expect(res.body.data.username).toBe('superadmin');
+          expect(res.body.data.email).toBe('superadmin@tobetake.dev');
+          expect(res.body.data.role).toBe('Super Admin');
+          expect(res.body.data.roleCode).toBe('SPADMIN');
+          expect(res.body.data.password).toBeUndefined();
+          expect(res.body.data.passwordHash).toBeUndefined();
+        });
+    });
+
+    it('should successfully authenticate Super Admin with email', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          email: 'superadmin@tobetake.dev',
+          password: 'SuperAdmin@2026!',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.role).toBe('Super Admin');
+          expect(res.body.data.roleCode).toBe('SPADMIN');
+        });
+    });
+
+    it('should successfully authenticate Admin with username', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          username: 'admin_tariq',
+          password: 'Password123!',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.message).toBe('Login successful');
+          expect(res.body.data.id).toBe('admin-uuid');
+          expect(res.body.data.username).toBe('admin_tariq');
+          expect(res.body.data.role).toBe('Admin');
+          expect(res.body.data.roleCode).toBe('ADMIN');
+          expect(res.body.data.password).toBeUndefined();
+        });
+    });
+
+    it('should successfully authenticate Admin with email', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          email: 'tariq.admin@tobetake.dev',
+          password: 'Password123!',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.role).toBe('Admin');
+        });
+    });
+
+    it('should successfully authenticate Buyer with username', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          username: 'buyer_bilal',
+          password: 'Password123!',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.message).toBe('Login successful');
+          expect(res.body.data.id).toBe('buyer-uuid');
+          expect(res.body.data.username).toBe('buyer_bilal');
+          expect(res.body.data.email).toBe('bilal.buyer@tobetake.dev');
+          expect(res.body.data.role).toBe('Buyer');
+          expect(res.body.data.roleCode).toBe('CUST');
+          expect(res.body.data.department).toBeNull();
+          expect(res.body.data.storeName).toBeNull();
+          expect(res.body.data.password).toBeUndefined();
+          expect(res.body.data.passwordHash).toBeUndefined();
+        });
+    });
+
+    it('should successfully authenticate Buyer with email', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          email: 'bilal.buyer@tobetake.dev',
+          password: 'Password123!',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.role).toBe('Buyer');
+          expect(res.body.data.roleCode).toBe('CUST');
+        });
+    });
+
+    it('should successfully authenticate Seller with username', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          username: 'seller_fatima',
+          password: 'Password123!',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.message).toBe('Login successful');
+          expect(res.body.data.id).toBe('seller-uuid');
+          expect(res.body.data.username).toBe('seller_fatima');
+          expect(res.body.data.email).toBe('fatima.seller@tobetake.dev');
+          expect(res.body.data.role).toBe('Seller');
+          expect(res.body.data.roleCode).toBe('VENDOR');
+          expect(res.body.data.storeName).toBe('Fatima Boutique');
+          expect(res.body.data.businessCategory).toBe('Fashion & Apparel');
+          expect(res.body.data.password).toBeUndefined();
+          expect(res.body.data.passwordHash).toBeUndefined();
+        });
+    });
+
+    it('should successfully authenticate Seller with email', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          email: 'fatima.seller@tobetake.dev',
+          password: 'Password123!',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.role).toBe('Seller');
+          expect(res.body.data.roleCode).toBe('VENDOR');
+          expect(res.body.data.storeName).toBe('Fatima Boutique');
+        });
+    });
+
+    it('should reject invalid password with 401 Unauthorized', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          username: 'admin_tariq',
+          password: 'WrongPassword!',
+        })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toBe('Invalid credentials.');
+        });
+    });
+
+    it('should reject unknown username/email with 401 Unauthorized (no enumeration)', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          username: 'unknown_account',
+          password: 'Password123!',
+        })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toBe('Invalid credentials.');
+        });
+    });
+
+    it('should reject missing username and email with 400 Bad Request', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          password: 'Password123!',
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body.message).toBe('Username or email is required.');
+        });
+    });
+
+    it('should reject missing password with 400 Bad Request', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          username: 'admin_tariq',
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body.message).toEqual(
+            expect.arrayContaining([expect.stringContaining('Password is required')]),
+          );
+        });
+    });
+
+    it('should reject non-whitelisted fields (e.g. role, isAdmin) with 400 Bad Request', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          username: 'admin_tariq',
+          password: 'Password123!',
+          role: 'ADMIN',
+          isAdmin: true,
+        })
+        .expect(400)
+        .expect((res) => {
+          expect(res.body.message).toEqual(
+            expect.arrayContaining([
+              expect.stringContaining('property role should not exist'),
+              expect.stringContaining('property isAdmin should not exist'),
+            ]),
+          );
+        });
+    });
+
+    it('should reject login for inactive accounts with 401 Unauthorized', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          username: 'inactive_admin',
+          password: 'Password123!',
+        })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toBe(
+            'Account is inactive or suspended. Please contact an administrator.',
+          );
+        });
+    });
+
+    it('should reject login for suspended accounts with 401 Unauthorized', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          username: 'suspended_admin',
+          password: 'Password123!',
+        })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toBe(
+            'Account is inactive or suspended. Please contact an administrator.',
+          );
+        });
+    });
+
+    it('should reject login for locked accounts with 401 Unauthorized', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          username: 'locked_admin',
+          password: 'Password123!',
+        })
+        .expect(401)
+        .expect((res) => {
+          expect(res.body.message).toBe('Account is locked. Please contact an administrator.');
         });
     });
   });

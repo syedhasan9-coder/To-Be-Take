@@ -1,6 +1,6 @@
-import { AdminUserResponse } from '@tobetake/shared-types';
+import { AuthUserResponse } from '@tobetake/shared-types';
 
-export class UserResponseDto implements AdminUserResponse {
+export class UserResponseDto implements AuthUserResponse {
   id!: string;
   username!: string;
   email!: string;
@@ -8,14 +8,15 @@ export class UserResponseDto implements AdminUserResponse {
   lastName!: string;
   role!: string;
   roleCode!: string;
-  departmentId!: number | null;
-  department!: string | null;
-  designation!: string | null;
+  departmentId?: number | null;
+  department?: string | null;
+  designation?: string | null;
   storeName?: string | null;
   businessCategory?: string | null;
   status!: string;
   isEmailVerified!: boolean;
   isMobileVerified!: boolean;
+  token?: string;
   createdAt!: Date;
   updatedAt!: Date;
 

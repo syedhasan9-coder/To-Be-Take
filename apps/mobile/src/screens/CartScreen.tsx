@@ -19,12 +19,14 @@ interface CartScreenProps {
   onNavigateToCatalog: () => void;
   onNavigateToCheckout: () => void;
   onNavigateToProduct: (productId: string) => void;
+  onNavigateToSignIn?: () => void;
 }
 
 export const CartScreen: React.FC<CartScreenProps> = ({
   onNavigateToCatalog,
   onNavigateToCheckout,
   onNavigateToProduct,
+  onNavigateToSignIn,
 }) => {
   const { isAuthenticated } = useAuth();
   const { cart, updateQuantity, removeFromCart, clearCart } = useCustomerCart();
@@ -39,14 +41,24 @@ export const CartScreen: React.FC<CartScreenProps> = ({
           <AppIcon name="cart-outline" size={32} color={colors.forest[800]} />
         </View>
         <Text style={styles.emptyTitle}>Your Cart is Waiting</Text>
-        <Text style={styles.emptySub}>Please sign in to view and manage your shopping bag.</Text>
+        <Text style={styles.emptySub}>Please sign in to view, save, and checkout your shopping bag.</Text>
+        {onNavigateToSignIn && (
+          <TouchableOpacity
+            style={[styles.actionBtn, { marginBottom: 10, width: '100%', maxWidth: 260 }]}
+            onPress={onNavigateToSignIn}
+            accessibilityRole="button"
+            accessibilityLabel="Sign in to customer account"
+          >
+            <Text style={styles.actionBtnText}>Sign In to Account</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
-          style={styles.actionBtn}
+          style={[styles.actionBtn, { backgroundColor: '#f6f2e8', borderWidth: 1, borderColor: '#e2dbc9', width: '100%', maxWidth: 260 }]}
           onPress={onNavigateToCatalog}
           accessibilityRole="button"
           accessibilityLabel="Explore Products"
         >
-          <Text style={styles.actionBtnText}>Explore Products</Text>
+          <Text style={[styles.actionBtnText, { color: colors.forest[900] }]}>Explore Products</Text>
         </TouchableOpacity>
       </View>
     );

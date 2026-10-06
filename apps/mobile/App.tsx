@@ -30,7 +30,7 @@ import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { AddressesScreen } from './src/screens/AddressesScreen';
 import { ReviewsScreen } from './src/screens/ReviewsScreen';
 import { OrdersListScreen } from './src/screens/OrdersListScreen';
-import { ScreenMode, CustomerTabType, CustomerActiveView } from './src/types';
+import { CustomerTabType, CustomerActiveView } from './src/types';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -94,6 +94,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 }
 
 function CustomerAppExperience(): React.ReactElement {
+  const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<CustomerTabType>('home');
   const [viewStack, setViewStack] = useState<CustomerActiveView[]>([{ type: 'tab', tab: 'home' }]);
   const [catalogInitialCategory, setCatalogInitialCategory] = useState<string | undefined>();
@@ -151,6 +152,7 @@ function CustomerAppExperience(): React.ReactElement {
         translucent={Platform.OS === 'android'}
       />
       <View style={styles.mainContent}>
+        {/* Top-Level Tabs */}
         {currentView.type === 'tab' && currentView.tab === 'home' && (
           <HomeScreen
             onNavigateToCatalog={(cat, search) => {
@@ -162,7 +164,13 @@ function CustomerAppExperience(): React.ReactElement {
               pushView({ type: 'product-detail', productId });
             }}
             onNavigateToCart={() => handleTabSelect('cart')}
-            onNavigateToNotifications={() => pushView({ type: 'account-notifications' })}
+            onNavigateToNotifications={() => {
+              if (isAuthenticated) {
+                pushView({ type: 'account-notifications' });
+              } else {
+                pushView({ type: 'sign-in', returnView: { type: 'account-notifications' } });
+              }
+            }}
           />
         )}
 
@@ -179,10 +187,17 @@ function CustomerAppExperience(): React.ReactElement {
         {currentView.type === 'tab' && currentView.tab === 'cart' && (
           <CartScreen
             onNavigateToCatalog={() => handleTabSelect('catalog')}
-            onNavigateToCheckout={() => pushView({ type: 'checkout' })}
+            onNavigateToCheckout={() => {
+              if (isAuthenticated) {
+                pushView({ type: 'checkout' });
+              } else {
+                pushView({ type: 'sign-in', returnView: { type: 'checkout' } });
+              }
+            }}
             onNavigateToProduct={(productId) => {
               pushView({ type: 'product-detail', productId });
             }}
+            onNavigateToSignIn={() => pushView({ type: 'sign-in', returnView: { type: 'tab', tab: 'cart' } })}
           />
         )}
 
@@ -192,6 +207,7 @@ function CustomerAppExperience(): React.ReactElement {
             onNavigateToProduct={(productId) => {
               pushView({ type: 'product-detail', productId });
             }}
+            onNavigateToSignIn={() => pushView({ type: 'sign-in', returnView: { type: 'tab', tab: 'wishlist' } })}
           />
         )}
 
@@ -202,15 +218,30 @@ function CustomerAppExperience(): React.ReactElement {
             onNavigateToNotifications={() => pushView({ type: 'account-notifications' })}
             onNavigateToReviews={() => pushView({ type: 'account-reviews' })}
             onNavigateToWishlist={() => handleTabSelect('wishlist')}
+            onNavigateToSignIn={() => pushView({ type: 'sign-in', returnView: { type: 'tab', tab: 'account' } })}
+            onNavigateToRegister={() => pushView({ type: 'register', returnView: { type: 'tab', tab: 'account' } })}
           />
         )}
 
+        {/* Stack Views: Product Detail & Checkout */}
         {currentView.type === 'product-detail' && (
           <ProductDetailScreen
             productId={currentView.productId}
             onNavigateBack={popView}
             onNavigateToCart={() => handleTabSelect('cart')}
-            onNavigateToCheckout={() => pushView({ type: 'checkout' })}
+            onNavigateToCheckout={() => {
+              if (isAuthenticated) {
+                pushView({ type: 'checkout' });
+              } else {
+                pushView({ type: 'sign-in', returnView: { type: 'checkout' } });
+              }
+            }}
+            onNavigateToSignIn={() =>
+              pushView({
+                type: 'sign-in',
+                returnView: { type: 'product-detail', productId: currentView.productId },
+              })
+            }
           />
         )}
 
@@ -234,6 +265,7 @@ function CustomerAppExperience(): React.ReactElement {
           />
         )}
 
+        {/* Account Subscreens */}
         {currentView.type === 'account-orders' && (
           <OrdersListScreen
             onNavigateBack={popView}
@@ -258,6 +290,58 @@ function CustomerAppExperience(): React.ReactElement {
             onNavigateToProduct={(productId) => pushView({ type: 'product-detail', productId })}
           />
         )}
+
+        {/* Auth Screens accessible directly inside customer flow */}
+        {currentView.type === 'sign-in' && (
+          <SignInScreen
+            onNavigateToRegister={() =>
+              pushView({
+                type: 'register',
+                returnView: currentView.returnView,
+              })
+            }
+            onNavigateToWelcome={popView}
+            onLoginSuccess={() => {
+              if (currentView.returnView) {
+                setViewStack((prev) => [
+                  ...prev.slice(0, prev.length - 1),
+                  currentView.returnView!,
+                ]);
+              } else {
+                popView();
+              }
+            }}
+          />
+        )}
+
+        {currentView.type === 'register' && (
+          <RegisterScreen
+            onNavigateToSignIn={() =>
+              pushView({
+                type: 'sign-in',
+                returnView: currentView.returnView,
+              })
+            }
+            onNavigateToWelcome={popView}
+            onRegisterSuccess={() => {
+              if (currentView.returnView) {
+                setViewStack((prev) => [
+                  ...prev.slice(0, prev.length - 1),
+                  currentView.returnView!,
+                ]);
+              } else {
+                popView();
+              }
+            }}
+          />
+        )}
+
+        {currentView.type === 'welcome' && (
+          <WelcomeScreen
+            onNavigateToSignIn={() => pushView({ type: 'sign-in' })}
+            onNavigateToRegister={() => pushView({ type: 'register' })}
+          />
+        )}
       </View>
 
       {/* Customer Bottom Navigation Bar (Visible on Top-Level Tabs) */}
@@ -269,8 +353,7 @@ function CustomerAppExperience(): React.ReactElement {
 }
 
 function MainNavigator(): React.ReactElement {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [unauthScreen, setUnauthScreen] = useState<Exclude<ScreenMode, 'home'>>('welcome');
+  const { isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -290,38 +373,8 @@ function MainNavigator(): React.ReactElement {
     );
   }
 
-  // Authenticated customer gets the full marketplace experience
-  if (isAuthenticated) {
-    return <CustomerAppExperience />;
-  }
-
-  // Unauthenticated flow
-  switch (unauthScreen) {
-    case 'sign-in':
-      return (
-        <SignInScreen
-          onNavigateToRegister={() => setUnauthScreen('register')}
-          onNavigateToWelcome={() => setUnauthScreen('welcome')}
-        />
-      );
-
-    case 'register':
-      return (
-        <RegisterScreen
-          onNavigateToSignIn={() => setUnauthScreen('sign-in')}
-          onNavigateToWelcome={() => setUnauthScreen('welcome')}
-        />
-      );
-
-    case 'welcome':
-    default:
-      return (
-        <WelcomeScreen
-          onNavigateToSignIn={() => setUnauthScreen('sign-in')}
-          onNavigateToRegister={() => setUnauthScreen('register')}
-        />
-      );
-  }
+  // App launch always starts directly with the customer marketplace experience
+  return <CustomerAppExperience />;
 }
 
 export default function App(): React.ReactElement {

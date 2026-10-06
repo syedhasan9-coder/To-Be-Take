@@ -19,7 +19,7 @@ function extractText(json: any): string {
   return '';
 }
 
-describe('App Navigation & Customer Marketplace Guard (Mobile)', () => {
+describe('App Navigation & Customer Marketplace Startup Flow (Mobile)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedStorage.getCustomerSession.mockResolvedValue(null);
@@ -29,7 +29,10 @@ describe('App Navigation & Customer Marketplace Guard (Mobile)', () => {
 
     mockedApi.getCustomerStorefront.mockResolvedValue({
       heroBanners: [],
-      categories: [],
+      categories: [
+        { id: 1, name: 'Ceramics & Pottery', slug: 'ceramics-pottery' },
+        { id: 2, name: 'Organic Oils', slug: 'organic-oils' },
+      ],
       featuredProducts: [],
       newArrivals: [],
       bestSellers: [],
@@ -42,6 +45,11 @@ describe('App Navigation & Customer Marketplace Guard (Mobile)', () => {
       },
       sellerSpotlights: [],
       topDeals: [],
+    } as any);
+    mockedApi.getCustomerProducts.mockResolvedValue({
+      products: [],
+      items: [],
+      pagination: { page: 1, limit: 10, total: 0, totalPages: 1 },
     });
     mockedApi.getCustomerCart.mockResolvedValue({
       items: [],
@@ -69,7 +77,7 @@ describe('App Navigation & Customer Marketplace Guard (Mobile)', () => {
     });
   });
 
-  it('renders Welcome screen by default for unauthenticated users', async () => {
+  it('renders Customer Marketplace (Home screen) by default on launch without requiring login', async () => {
     mockedStorage.getCustomerSession.mockResolvedValueOnce(null);
 
     let component!: renderer.ReactTestRenderer;
@@ -78,12 +86,13 @@ describe('App Navigation & Customer Marketplace Guard (Mobile)', () => {
     });
 
     const allText = extractText(component.toJSON());
-    expect(allText).toContain('Welcome to To Be Take');
-    expect(allText).toContain('Sign In');
-    expect(allText).toContain('Create Account');
+    expect(allText).toContain('ToBeTake');
+    expect(allText).toContain('PAKISTANI LIFESTYLE MARKETPLACE');
+    expect(allText).toContain('Explore Marketplace');
+    expect(allText).not.toContain('Customer Sign In');
   });
 
-  it('allows unauthenticated user to navigate from Welcome to Sign In and back', async () => {
+  it('allows guest to navigate from Account tab to Sign In and back', async () => {
     mockedStorage.getCustomerSession.mockResolvedValueOnce(null);
 
     let component!: renderer.ReactTestRenderer;
@@ -91,14 +100,24 @@ describe('App Navigation & Customer Marketplace Guard (Mobile)', () => {
       component = renderer.create(<App />);
     });
 
-    let allText = extractText(component.toJSON());
-    expect(allText).toContain('Welcome to To Be Take');
-
     const root = component.root;
-    const signInBtn = root.find(
-      (n: ReactTestInstance) => n.props.accessibilityLabel === 'Sign In to your customer account',
+    // 1. Navigate to Account tab
+    const accountTabBtn = root.find(
+      (n: ReactTestInstance) => n.props.accessibilityLabel === 'Account tab',
     );
+    await act(async () => {
+      accountTabBtn.props.onPress();
+    });
 
+    let allText = extractText(component.toJSON());
+    expect(allText).toContain('Customer Account');
+    expect(allText).toContain('Welcome to To Be Take');
+    expect(allText).toContain('Sign In as Customer');
+
+    // 2. Click Sign In
+    const signInBtn = root.find(
+      (n: ReactTestInstance) => n.props.accessibilityLabel === 'Sign in as customer',
+    );
     await act(async () => {
       signInBtn.props.onPress();
     });
@@ -106,20 +125,20 @@ describe('App Navigation & Customer Marketplace Guard (Mobile)', () => {
     allText = extractText(component.toJSON());
     expect(allText).toContain('Customer Sign In');
 
+    // 3. Back from Sign In
     const backBtn = root.find(
       (n: ReactTestInstance) => n.props.accessibilityLabel === '← Back to Welcome',
     );
-
     await act(async () => {
       backBtn.props.onPress();
     });
 
     allText = extractText(component.toJSON());
-    expect(allText).toContain('Welcome to To Be Take');
+    expect(allText).toContain('Customer Account');
     expect(allText).not.toContain('Customer Sign In');
   });
 
-  it('allows unauthenticated user to navigate from Welcome to Register and back', async () => {
+  it('allows guest to navigate from Account tab to Register and back', async () => {
     mockedStorage.getCustomerSession.mockResolvedValueOnce(null);
 
     let component!: renderer.ReactTestRenderer;
@@ -127,35 +146,40 @@ describe('App Navigation & Customer Marketplace Guard (Mobile)', () => {
       component = renderer.create(<App />);
     });
 
-    let allText = extractText(component.toJSON());
-    expect(allText).toContain('Welcome to To Be Take');
-
     const root = component.root;
-    const createAccountBtn = root.find(
-      (n: ReactTestInstance) => n.props.accessibilityLabel === 'Create a new customer account',
+    // 1. Navigate to Account tab
+    const accountTabBtn = root.find(
+      (n: ReactTestInstance) => n.props.accessibilityLabel === 'Account tab',
     );
-
     await act(async () => {
-      createAccountBtn.props.onPress();
+      accountTabBtn.props.onPress();
     });
 
-    allText = extractText(component.toJSON());
+    // 2. Click Create Account
+    const registerBtn = root.find(
+      (n: ReactTestInstance) => n.props.accessibilityLabel === 'Create customer account',
+    );
+    await act(async () => {
+      registerBtn.props.onPress();
+    });
+
+    let allText = extractText(component.toJSON());
     expect(allText).toContain('Create Customer Account');
 
+    // 3. Back from Register
     const backBtn = root.find(
       (n: ReactTestInstance) => n.props.accessibilityLabel === '← Back to Welcome',
     );
-
     await act(async () => {
       backBtn.props.onPress();
     });
 
     allText = extractText(component.toJSON());
-    expect(allText).toContain('Welcome to To Be Take');
+    expect(allText).toContain('Customer Account');
     expect(allText).not.toContain('Create Customer Account');
   });
 
-  it('renders Customer Marketplace directly when stored session is present', async () => {
+  it('renders Customer Marketplace with authenticated user session when present', async () => {
     mockedStorage.getCustomerSession.mockResolvedValueOnce({
       id: 'cust-10',
       username: 'bilalahmed',
@@ -174,11 +198,10 @@ describe('App Navigation & Customer Marketplace Guard (Mobile)', () => {
     const allText = extractText(component.toJSON());
     expect(allText).toContain('ToBeTake');
     expect(allText).toContain('PAKISTANI LIFESTYLE MARKETPLACE');
-    expect(allText).toContain('Explore');
     expect(allText).not.toContain('Customer Sign In');
   });
 
-  it('navigates to Customer Marketplace on successful login', async () => {
+  it('allows customer to sign in from Account tab and logs in successfully', async () => {
     mockedStorage.getCustomerSession.mockResolvedValueOnce(null);
     mockedApi.loginCustomer.mockResolvedValueOnce({
       success: true,
@@ -200,17 +223,23 @@ describe('App Navigation & Customer Marketplace Guard (Mobile)', () => {
     });
 
     const root = component.root;
-    const welcomeSignInBtn = root.find(
-      (n: ReactTestInstance) => n.props.accessibilityLabel === 'Sign In to your customer account',
+    // 1. Navigate to Account tab
+    const accountTabBtn = root.find(
+      (n: ReactTestInstance) => n.props.accessibilityLabel === 'Account tab',
     );
-
     await act(async () => {
-      welcomeSignInBtn.props.onPress();
+      accountTabBtn.props.onPress();
     });
 
-    let allText = extractText(component.toJSON());
-    expect(allText).toContain('Customer Sign In');
+    // 2. Click Sign In
+    const signInBtn = root.find(
+      (n: ReactTestInstance) => n.props.accessibilityLabel === 'Sign in as customer',
+    );
+    await act(async () => {
+      signInBtn.props.onPress();
+    });
 
+    // 3. Fill Credentials & Submit
     const identifierInput = root.find(
       (n: ReactTestInstance) => n.props.testID === 'input-identifier',
     );
@@ -226,10 +255,13 @@ describe('App Navigation & Customer Marketplace Guard (Mobile)', () => {
       submitBtn.props.onPress();
     });
 
-    allText = extractText(component.toJSON());
-    expect(allText).toContain('ToBeTake');
-    expect(allText).toContain('PAKISTANI LIFESTYLE MARKETPLACE');
+    const allText = extractText(component.toJSON());
+    expect(allText).toContain('My Account');
     expect(allText).not.toContain('Customer Sign In');
+    expect(mockedStorage.saveCustomerSession).toHaveBeenCalledWith(
+      expect.objectContaining({ username: 'fatimakhan' }),
+      'jwt-token-xyz',
+    );
   });
 
   it('catches render errors in ErrorBoundary and displays fallback UI', () => {

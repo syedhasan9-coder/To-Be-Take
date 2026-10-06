@@ -21,6 +21,8 @@ interface AccountScreenProps {
   onNavigateToNotifications: () => void;
   onNavigateToReviews: () => void;
   onNavigateToWishlist: () => void;
+  onNavigateToSignIn?: () => void;
+  onNavigateToRegister?: () => void;
 }
 
 export const AccountScreen: React.FC<AccountScreenProps> = ({
@@ -29,15 +31,23 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
   onNavigateToNotifications,
   onNavigateToReviews,
   onNavigateToWishlist,
+  onNavigateToSignIn,
+  onNavigateToRegister,
 }) => {
-  const { user, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const { unreadNotificationsCount } = useCustomerCart();
   const [profile, setProfile] = useState<CustomerProfileSummary | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [loggingOut, setLoggingOut] = useState<boolean>(false);
 
   const loadProfile = useCallback(async () => {
+    if (!isAuthenticated) {
+      setProfile(null);
+      setLoading(false);
+      return;
+    }
     try {
+      setLoading(true);
       const data = await getCustomerProfile();
       setProfile(data);
     } catch (err) {
@@ -45,7 +55,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     loadProfile();
@@ -71,6 +81,152 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({
     ]);
   };
 
+  const handleProtectedAction = (action: () => void) => {
+    if (!isAuthenticated) {
+      if (onNavigateToSignIn) {
+        onNavigateToSignIn();
+      } else {
+        Alert.alert('Sign In Required', 'Please sign in to access this feature.');
+      }
+      return;
+    }
+    action();
+  };
+
+  // ---------------- GUEST VIEW ---------------- //
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.container}>
+        {/* Top Header */}
+        <View style={styles.topBar}>
+          <Text style={styles.topTitle}>Customer Account</Text>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Guest Welcome Card */}
+          <View style={styles.guestCard}>
+            <View style={styles.guestIconBg}>
+              <AppIcon name="shield" size={28} color={colors.forest[800]} />
+            </View>
+            <Text style={styles.guestTitle}>Welcome to To Be Take</Text>
+            <Text style={styles.guestSubtitle}>
+              Sign in to manage your orders, track TCS deliveries in real time, and access your saved addresses.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.primaryAuthBtn}
+              onPress={onNavigateToSignIn}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Sign in as customer"
+            >
+              <Text style={styles.primaryAuthBtnText}>Sign In as Customer</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.secondaryAuthBtn}
+              onPress={onNavigateToRegister}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Create customer account"
+            >
+              <Text style={styles.secondaryAuthBtnText}>Create New Account →</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Quick Shortcuts */}
+          <View style={styles.menuCard}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleProtectedAction(onNavigateToOrders)}
+              accessibilityRole="button"
+              accessibilityLabel="My Orders"
+            >
+              <View style={styles.menuLeft}>
+                <View style={styles.menuIconBg}>
+                  <AppIcon name="orders" size={18} color={colors.forest[800]} />
+                </View>
+                <Text style={styles.menuLabel}>My Orders & Live Tracking</Text>
+              </View>
+              <AppIcon name="chevron-right" size={18} color="#9aa79f" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleProtectedAction(onNavigateToAddresses)}
+              accessibilityRole="button"
+              accessibilityLabel="Delivery Addresses"
+            >
+              <View style={styles.menuLeft}>
+                <View style={styles.menuIconBg}>
+                  <AppIcon name="location" size={18} color={colors.forest[800]} />
+                </View>
+                <Text style={styles.menuLabel}>Delivery Addresses (Pakistan)</Text>
+              </View>
+              <AppIcon name="chevron-right" size={18} color="#9aa79f" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={onNavigateToWishlist}
+              accessibilityRole="button"
+              accessibilityLabel="Saved Wishlist"
+            >
+              <View style={styles.menuLeft}>
+                <View style={styles.menuIconBg}>
+                  <AppIcon name="wishlist" size={18} color={colors.forest[800]} />
+                </View>
+                <Text style={styles.menuLabel}>Saved Treasures / Wishlist</Text>
+              </View>
+              <AppIcon name="chevron-right" size={18} color="#9aa79f" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Pakistani Courier & Trust strip */}
+          <View style={styles.trustCard}>
+            <Text style={styles.trustTitle}>Pakistan's Trusted Artisanal Network</Text>
+            <View style={styles.trustGrid}>
+              <View style={styles.trustItem}>
+                <AppIcon name="delivery" size={18} color={colors.forest[800]} />
+                <Text style={styles.trustItemTitle}>TCS & Leopards</Text>
+                <Text style={styles.trustItemSub}>Nationwide courier tracking</Text>
+              </View>
+              <View style={styles.trustItem}>
+                <AppIcon name="cash" size={18} color={colors.forest[800]} />
+                <Text style={styles.trustItemTitle}>COD & Raast</Text>
+                <Text style={styles.trustItemSub}>JazzCash & EasyPaisa</Text>
+              </View>
+              <View style={styles.trustItem}>
+                <AppIcon name="shield" size={18} color={colors.forest[800]} />
+                <Text style={styles.trustItemTitle}>100% Authentic</Text>
+                <Text style={styles.trustItemSub}>Artisan verified quality</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Customer Support */}
+          <View style={styles.supportCard}>
+            <Text style={styles.supportTitle}>Customer Support Pakistan</Text>
+            <Text style={styles.supportDesc}>
+              Need assistance with your orders, courier tracking, or returns?
+            </Text>
+            <View style={styles.supportContacts}>
+              <View style={styles.contactItem}>
+                <AppIcon name="phone" size={14} color={colors.forest[800]} />
+                <Text style={styles.contactText}>+92 300 1234567</Text>
+              </View>
+              <View style={styles.contactItem}>
+                <AppIcon name="mail" size={14} color={colors.forest[800]} />
+                <Text style={styles.contactText}>support@tobetake.pk</Text>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // ---------------- AUTHENTICATED VIEW ---------------- //
   const fullName = profile
     ? `${profile.firstName} ${profile.lastName}`
     : `${user?.firstName || 'Valued'} ${user?.lastName || 'Customer'}`;
@@ -262,6 +418,72 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     gap: 14,
   },
+  guestCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#e2dbc9',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: colors.forest[900],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+  },
+  guestIconBg: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#edf6ee',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#d6ebd9',
+  },
+  guestTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#14291f',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  guestSubtitle: {
+    fontSize: 13,
+    color: '#718077',
+    textAlign: 'center',
+    lineHeight: 19,
+    marginBottom: 18,
+    maxWidth: 280,
+  },
+  primaryAuthBtn: {
+    width: '100%',
+    backgroundColor: colors.forest[800],
+    paddingVertical: 13,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  primaryAuthBtnText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  secondaryAuthBtn: {
+    width: '100%',
+    backgroundColor: '#f6f2e8',
+    borderWidth: 1,
+    borderColor: '#e2dbc9',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  secondaryAuthBtnText: {
+    color: colors.forest[900],
+    fontSize: 13,
+    fontWeight: '700',
+  },
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -411,6 +633,42 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 10,
     fontWeight: '800',
+  },
+  trustCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e2dbc9',
+  },
+  trustTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#14291f',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  trustGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  trustItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  trustItemTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#14291f',
+    marginTop: 4,
+    marginBottom: 2,
+    textAlign: 'center',
+  },
+  trustItemSub: {
+    fontSize: 9,
+    color: '#718077',
+    textAlign: 'center',
   },
   supportCard: {
     backgroundColor: '#ffffff',

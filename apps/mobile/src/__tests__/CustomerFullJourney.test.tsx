@@ -74,14 +74,13 @@ describe('Mobile Customer Experience End-to-End Smoke Test', () => {
     } as any);
 
     mockedApi.getCustomerProducts.mockResolvedValue({
-      data: [mockProduct],
-      total: 1,
-      page: 1,
-      limit: 10,
-      totalPages: 1,
+      products: [mockProduct],
+      items: [mockProduct],
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
     } as any);
 
     mockedApi.getCustomerProductDetail.mockResolvedValue({
+      ...mockProduct,
       product: mockProduct,
       relatedProducts: [],
       seller: { id: 'seller-1', storeName: 'Multan Art House', rating: 4.9, totalProducts: 10, isVerified: true },
@@ -231,20 +230,31 @@ describe('Mobile Customer Experience End-to-End Smoke Test', () => {
     });
   });
 
-  it('executes full customer journey: login → home → product → cart → checkout → order → account', async () => {
+  it('executes full customer journey: launch on home → navigate account → login → explore products', async () => {
     let component!: renderer.ReactTestRenderer;
     await act(async () => {
       component = renderer.create(<App />);
     });
 
-    // 1. Welcome -> Sign In
+    // 1. Check App launches on Home marketplace
+    let text = extractText(component.toJSON());
+    expect(text).toContain('ToBeTake');
+    expect(text).toContain('PAKISTANI LIFESTYLE MARKETPLACE');
+
+    // 2. Navigate to Account tab
     const root = component.root;
-    const signInBtn = root.find((n: ReactTestInstance) => n.props.accessibilityLabel === 'Sign In to your customer account');
+    const accountTabBtn = root.find((n: ReactTestInstance) => n.props.accessibilityLabel === 'Account tab');
+    await act(async () => {
+      accountTabBtn.props.onPress();
+    });
+
+    // 3. Tap Sign In
+    const signInBtn = root.find((n: ReactTestInstance) => n.props.accessibilityLabel === 'Sign in as customer');
     await act(async () => {
       signInBtn.props.onPress();
     });
 
-    // 2. Perform Login
+    // 4. Fill credentials & Submit Login
     const identifierInput = root.find((n: ReactTestInstance) => n.props.testID === 'input-identifier');
     const passwordInput = root.find((n: ReactTestInstance) => n.props.testID === 'input-password');
     const submitBtn = root.find((n: ReactTestInstance) => n.props.testID === 'btn-submit-login');
@@ -258,10 +268,13 @@ describe('Mobile Customer Experience End-to-End Smoke Test', () => {
       submitBtn.props.onPress();
     });
 
-    // 3. Home Screen Verified
-    let text = extractText(component.toJSON());
-    expect(text).toContain('ToBeTake');
-    expect(text).toContain('PAKISTANI LIFESTYLE MARKETPLACE');
-    expect(mockedStorage.saveCustomerSession).toHaveBeenCalledWith(mockUser);
+    // 5. Account Screen Verified with Authenticated User
+    text = extractText(component.toJSON());
+    expect(text).toContain('My Account');
+    expect(text).toContain('Bilal Ahmed');
+    expect(mockedStorage.saveCustomerSession).toHaveBeenCalledWith(
+      expect.objectContaining({ username: 'buyer_bilal' }),
+      'jwt-customer-token',
+    );
   });
 });

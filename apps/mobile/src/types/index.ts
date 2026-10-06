@@ -23,7 +23,10 @@ export type CustomerActiveView =
   | { type: 'account-orders' }
   | { type: 'account-addresses' }
   | { type: 'account-notifications' }
-  | { type: 'account-reviews' };
+  | { type: 'account-reviews' }
+  | { type: 'sign-in'; returnView?: CustomerActiveView }
+  | { type: 'register'; returnView?: CustomerActiveView }
+  | { type: 'welcome' };
 
 export interface FormErrors {
   firstName?: string;

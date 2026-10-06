@@ -32,13 +32,13 @@ describe('AuthController', () => {
 
   const mockSellerResponse = new UserResponseDto({
     id: 'seller-uuid-456',
-    username: 'seller_alice',
-    email: 'alice.seller@tobetake.dev',
-    firstName: 'Alice',
-    lastName: 'Smith',
+    username: 'seller_fatima',
+    email: 'fatima.seller@tobetake.dev',
+    firstName: 'Fatima',
+    lastName: 'Khan',
     role: 'Seller',
     roleCode: 'VENDOR',
-    storeName: 'Alice Boutique',
+    storeName: 'Fatima Boutique Lahore',
     businessCategory: 'Fashion & Apparel',
     departmentId: null,
     department: null,
@@ -52,10 +52,10 @@ describe('AuthController', () => {
 
   const mockUserResponse = new UserResponseDto({
     id: 'buyer-uuid-789',
-    username: 'buyer_bob',
-    email: 'bob.buyer@tobetake.dev',
-    firstName: 'Bob',
-    lastName: 'Dylan',
+    username: 'buyer_bilal',
+    email: 'bilal.buyer@tobetake.dev',
+    firstName: 'Bilal',
+    lastName: 'Ahmed',
     role: 'Buyer',
     roleCode: 'CUST',
     departmentId: null,
@@ -70,6 +70,7 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     const mockAuthService = {
+      login: jest.fn().mockResolvedValue(mockAdminResponse),
       registerAdmin: jest.fn().mockResolvedValue(mockAdminResponse),
       registerSeller: jest.fn().mockResolvedValue(mockSellerResponse),
       registerUser: jest.fn().mockResolvedValue(mockUserResponse),
@@ -96,12 +97,27 @@ describe('AuthController', () => {
     expect(controller).toBeDefined();
   });
 
+  it('should call authService.login and return standard ApiResponse envelope', async () => {
+    const dto = {
+      username: 'tariq_admin',
+      password: 'Password123!',
+    };
+
+    const result = await controller.login(dto);
+
+    expect(authService.login).toHaveBeenCalledWith(dto);
+    expect(result.success).toBe(true);
+    expect(result.message).toBe('Login successful');
+    expect(result.data).toEqual(mockAdminResponse);
+    expect(result.timestamp).toBeDefined();
+  });
+
   it('should call authService.registerAdmin and return standard ApiResponse envelope', async () => {
     const dto: RegisterAdminDto = {
-      firstName: 'Alex',
-      lastName: 'Mercer',
-      username: 'alex_admin',
-      email: 'alex@tobetake.dev',
+      firstName: 'Tariq',
+      lastName: 'Mehmood',
+      username: 'tariq_admin',
+      email: 'tariq@tobetake.dev',
       password: 'Password123!',
       departmentId: 1,
       designation: 'Manager',
@@ -118,12 +134,12 @@ describe('AuthController', () => {
 
   it('should call authService.registerSeller and return standard ApiResponse envelope', async () => {
     const dto: RegisterSellerDto = {
-      firstName: 'Alice',
-      lastName: 'Smith',
-      username: 'seller_alice',
-      email: 'alice.seller@tobetake.dev',
+      firstName: 'Fatima',
+      lastName: 'Khan',
+      username: 'seller_fatima',
+      email: 'fatima.seller@tobetake.dev',
       password: 'Password123!',
-      storeName: 'Alice Boutique',
+      storeName: 'Fatima Boutique Lahore',
       businessCategory: 'Fashion & Apparel',
     };
 
@@ -138,10 +154,10 @@ describe('AuthController', () => {
 
   it('should call authService.registerUser and return standard ApiResponse envelope', async () => {
     const dto = {
-      firstName: 'Bob',
-      lastName: 'Dylan',
-      username: 'buyer_bob',
-      email: 'bob.buyer@tobetake.dev',
+      firstName: 'Bilal',
+      lastName: 'Ahmed',
+      username: 'buyer_bilal',
+      email: 'bilal.buyer@tobetake.dev',
       password: 'Password123!',
       confirmPassword: 'Password123!',
     };

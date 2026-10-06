@@ -1,6 +1,8 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { ApiResponse } from '@tobetake/shared-types';
+import { AuthThrottle } from '../common/throttler/throttler.decorators';
 import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
 import { RegisterAdminDto } from './dto/register-admin.dto';
 import { RegisterSellerDto } from './dto/register-seller.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -9,8 +11,23 @@ import { AdminRegistrationGuard } from './guards/admin-registration.guard';
 import { SellerRegistrationGuard } from './guards/seller-registration.guard';
 
 @Controller('auth')
+@AuthThrottle()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  // User authentication / login endpoint
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  async login(@Body() loginDto: LoginDto): Promise<ApiResponse<UserResponseDto>> {
+    const user = await this.authService.login(loginDto);
+
+    return {
+      success: true,
+      message: 'Login successful',
+      data: user,
+      timestamp: new Date().toISOString(),
+    };
+  }
 
   // Admin registration endpoint
   @Post('register/admin')

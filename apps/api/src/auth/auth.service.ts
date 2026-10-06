@@ -4,9 +4,11 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma, PrismaService, UserStatus } from '@tobetake/database';
 import { PasswordService } from '../common/services/password.service';
+import { LoginDto } from './dto/login.dto';
 import { RegisterAdminDto } from './dto/register-admin.dto';
 import { RegisterSellerDto } from './dto/register-seller.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -116,6 +118,7 @@ export class AuthService {
         status: newUser.status,
         isEmailVerified: newUser.isEmailVerified,
         isMobileVerified: newUser.isMobileVerified,
+        token: newUser.id,
         createdAt: newUser.createdAt,
         updatedAt: newUser.updatedAt,
       });
@@ -226,6 +229,7 @@ export class AuthService {
         status: newUser.status,
         isEmailVerified: newUser.isEmailVerified,
         isMobileVerified: newUser.isMobileVerified,
+        token: newUser.id,
         createdAt: newUser.createdAt,
         updatedAt: newUser.updatedAt,
       });
@@ -333,6 +337,7 @@ export class AuthService {
         status: newUser.status,
         isEmailVerified: newUser.isEmailVerified,
         isMobileVerified: newUser.isMobileVerified,
+        token: newUser.id,
         createdAt: newUser.createdAt,
         updatedAt: newUser.updatedAt,
       });
@@ -349,5 +354,154 @@ export class AuthService {
       }
       throw error;
     }
+  }
+
+  // Authenticate a user by username or email and password
+  async login(dto: LoginDto): Promise<UserResponseDto> {
+    const rawIdentifier = dto.identifier || dto.usernameOrEmail || dto.username || dto.email;
+
+    if (!rawIdentifier || typeof rawIdentifier !== 'string' || rawIdentifier.trim().length === 0) {
+      throw new BadRequestException('Username or email is required.');
+    }
+
+    const identifier = rawIdentifier.trim().toLowerCase();
+    this.logger.log(`Authentication attempt for identifier: '${identifier}'`);
+
+    // Find user by username or email
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ username: identifier }, { email: identifier }],
+        isDeleted: false,
+      },
+      include: {
+        role: true,
+        department: true,
+      },
+    });
+
+    if (!user) {
+      this.logger.warn(`Authentication failed: User '${identifier}' not found.`);
+      throw new UnauthorizedException('Invalid credentials.');
+    }
+
+    // Verify password hash
+    const isPasswordValid = await this.passwordService.compare(dto.password, user.password);
+
+    if (!isPasswordValid) {
+      this.logger.warn(`Authentication failed: Invalid password for user '${identifier}'.`);
+      try {
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { failedLoginAttempts: { increment: 1 } },
+        });
+      } catch {
+        // Suppress failure counter update error
+      }
+      throw new UnauthorizedException('Invalid credentials.');
+    }
+
+    // Check account status and lock status
+    if (user.isLocked && user.lockedUntil && user.lockedUntil > new Date()) {
+      this.logger.warn(`Authentication rejected: User '${identifier}' is locked.`);
+      throw new UnauthorizedException('Account is locked. Please contact an administrator.');
+    }
+
+    if (user.status === UserStatus.INACTIVE || user.status === UserStatus.SUSPENDED) {
+      this.logger.warn(
+        `Authentication rejected: User '${identifier}' has status '${user.status}'.`,
+      );
+      throw new UnauthorizedException(
+        'Account is inactive or suspended. Please contact an administrator.',
+      );
+    }
+
+    // Authoritative portal & role boundary enforcement
+    const normalizedPortal = dto.portal?.trim().toLowerCase();
+    const normalizedRequiredRole = dto.requiredRole?.trim().toUpperCase();
+
+    if (
+      normalizedPortal === 'seller' ||
+      normalizedRequiredRole === 'VENDOR' ||
+      normalizedRequiredRole === 'SELLER'
+    ) {
+      if (user.role.code !== 'VENDOR') {
+        this.logger.warn(
+          `Seller authentication boundary violation: User '${user.username}' with role '${user.role.code}' attempted login via Seller portal.`,
+        );
+        throw new UnauthorizedException('Access denied. Seller account required.');
+      }
+
+      if (user.status === UserStatus.PENDING_VERIFICATION) {
+        this.logger.warn(
+          `Seller authentication rejected: Seller account '${user.username}' is pending verification.`,
+        );
+        throw new UnauthorizedException(
+          'Your seller account is pending verification. Please wait for administrator approval.',
+        );
+      }
+    } else if (
+      normalizedPortal === 'admin' ||
+      normalizedRequiredRole === 'ADMIN' ||
+      normalizedRequiredRole === 'SPADMIN'
+    ) {
+      if (user.role.code !== 'ADMIN' && user.role.code !== 'SPADMIN') {
+        this.logger.warn(
+          `Admin authentication boundary violation: User '${user.username}' with role '${user.role.code}' attempted login via Admin portal.`,
+        );
+        throw new UnauthorizedException('Access denied. Administrator privileges required.');
+      }
+    } else if (
+      normalizedPortal === 'user' ||
+      normalizedPortal === 'customer' ||
+      normalizedRequiredRole === 'CUST' ||
+      normalizedRequiredRole === 'USER' ||
+      normalizedRequiredRole === 'CUSTOMER'
+    ) {
+      if (user.role.code !== 'CUST') {
+        this.logger.warn(
+          `Customer authentication boundary violation: User '${user.username}' with role '${user.role.code}' attempted login via Customer portal.`,
+        );
+        throw new UnauthorizedException('Access denied. Customer account required.');
+      }
+    }
+
+    // Update lastLogin and reset failed login attempts
+    const now = new Date();
+    try {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          lastLogin: now,
+          failedLoginAttempts: 0,
+        },
+      });
+    } catch (err) {
+      this.logger.warn(
+        `Failed to update last login for user ${user.id}: ${(err as Error).message}`,
+      );
+    }
+
+    this.logger.log(`User '${user.username}' (${user.role.name}) logged in successfully.`);
+
+    return new UserResponseDto({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role.name,
+      roleCode: user.role.code,
+      departmentId: user.department?.id ?? null,
+      department: user.department?.name ?? null,
+      designation: user.designation ?? null,
+      storeName: user.storeName ?? null,
+      businessCategory: user.businessCategory ?? null,
+      status: user.status,
+      isEmailVerified: user.isEmailVerified,
+      isMobileVerified: user.isMobileVerified,
+      token: user.id,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    });
   }
 }

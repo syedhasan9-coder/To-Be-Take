@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { PrismaClient, UserStatus } from '@prisma/client';
 
 describe('Sprint 1 - Database Schema and Seed Verification', () => {
@@ -6,11 +7,11 @@ describe('Sprint 1 - Database Schema and Seed Verification', () => {
   beforeAll(async () => {
     prisma = new PrismaClient();
     await prisma.$connect();
-  });
+  }, 30000);
 
   afterAll(async () => {
     await prisma.$disconnect();
-  });
+  }, 30000);
 
   describe('1. UserRoles Table & Seed Verification', () => {
     it('should have all 4 initial roles seeded correctly', async () => {
@@ -189,10 +190,10 @@ describe('Sprint 1 - Database Schema and Seed Verification', () => {
           username: testSellerUsername,
           email: testSellerEmail,
           password: dummyPasswordHash,
-          firstName: 'John',
-          lastName: 'Vendor',
+          firstName: 'Tariq',
+          lastName: 'Mehmood',
           roleId: 3, // Seller
-          storeName: 'Acme Electronics',
+          storeName: 'Al-Madina Electronics & Gadgets',
           businessCategory: 'Electronics & Gadgets',
           createdBy: adminUser.id,
           updatedBy: adminUser.id,
@@ -207,7 +208,7 @@ describe('Sprint 1 - Database Schema and Seed Verification', () => {
       });
 
       expect(sellerUser.role.code).toBe('VENDOR');
-      expect(sellerUser.storeName).toBe('Acme Electronics');
+      expect(sellerUser.storeName).toBe('Al-Madina Electronics & Gadgets');
       expect(sellerUser.businessCategory).toBe('Electronics & Gadgets');
       expect(sellerUser.departmentId).toBeNull();
       expect(sellerUser.department).toBeNull();

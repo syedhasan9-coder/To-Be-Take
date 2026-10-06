@@ -21,11 +21,13 @@ const CARD_WIDTH = (width - 44) / 2;
 interface WishlistScreenProps {
   onNavigateToCatalog: () => void;
   onNavigateToProduct: (productId: string) => void;
+  onNavigateToSignIn?: () => void;
 }
 
 export const WishlistScreen: React.FC<WishlistScreenProps> = ({
   onNavigateToCatalog,
   onNavigateToProduct,
+  onNavigateToSignIn,
 }) => {
   const { isAuthenticated } = useAuth();
   const { wishlist, toggleWishlist, addToCart } = useCustomerCart();
@@ -40,13 +42,23 @@ export const WishlistScreen: React.FC<WishlistScreenProps> = ({
         <Text style={styles.emptySub}>
           Please sign in to keep track of pure Pakistani artisanal items.
         </Text>
+        {onNavigateToSignIn && (
+          <TouchableOpacity
+            style={[styles.actionBtn, { marginBottom: 10, width: '100%', maxWidth: 260 }]}
+            onPress={onNavigateToSignIn}
+            accessibilityRole="button"
+            accessibilityLabel="Sign in to customer account"
+          >
+            <Text style={styles.actionBtnText}>Sign In to Account</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
-          style={styles.actionBtn}
+          style={[styles.actionBtn, { backgroundColor: '#f6f2e8', borderWidth: 1, borderColor: '#e2dbc9', width: '100%', maxWidth: 260 }]}
           onPress={onNavigateToCatalog}
           accessibilityRole="button"
           accessibilityLabel="Explore marketplace"
         >
-          <Text style={styles.actionBtnText}>Explore Marketplace</Text>
+          <Text style={[styles.actionBtnText, { color: colors.forest[900] }]}>Explore Marketplace</Text>
         </TouchableOpacity>
       </View>
     );

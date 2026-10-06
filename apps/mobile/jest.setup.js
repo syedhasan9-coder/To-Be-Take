@@ -29,6 +29,7 @@ jest.mock('react-native/Libraries/Core/setUpReactDevTools', () => ({
 }));
 
 jest.mock('react-native/Libraries/Core/setUpTimers', () => ({}));
+jest.mock('react-native/Libraries/Core/setUpXHR', () => ({}));
 
 // Mock @expo/vector-icons
 jest.mock('@expo/vector-icons', () => {

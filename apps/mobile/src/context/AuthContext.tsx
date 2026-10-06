@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }): React.React
       const result = await loginCustomer(identifier, password);
       if (result.success && result.user) {
         setUser(result.user);
-        await saveCustomerSession(result.user);
+        await saveCustomerSession(result.user, result.token);
       }
       return result;
     },
@@ -64,6 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }): React.React
 
   const register = useCallback(async (payload: RegisterPayload): Promise<ApiAuthResult> => {
     const result = await registerCustomer(payload);
+    if (result.success && result.user) {
+      setUser(result.user);
+      await saveCustomerSession(result.user, result.token);
+    }
     return result;
   }, []);
 
