@@ -6,7 +6,7 @@
   "build": {
     "development": {
       "node": "20.18.0",
-      "pnpm": "9.15.4",
+      "pnpm": "10.6.1",
       "developmentClient": true,
       "distribution": "internal",
       "env": {
@@ -15,7 +15,7 @@
     },
     "preview": {
       "node": "20.18.0",
-      "pnpm": "9.15.4",
+      "pnpm": "10.6.1",
       "distribution": "internal",
       "android": {
         "buildType": "apk"
@@ -26,7 +26,7 @@
     },
     "production": {
       "node": "20.18.0",
-      "pnpm": "9.15.4",
+      "pnpm": "10.6.1",
       "android": {
         "buildType": "apk"
       },
