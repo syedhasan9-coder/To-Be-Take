@@ -4,6 +4,8 @@
   },
   "build": {
     "preview": {
+      "node": "20.18.0",
+      "pnpm": "9.15.4",
       "distribution": "internal",
       "android": {
         "buildType": "apk"
@@ -13,6 +15,8 @@
       }
     },
     "production": {
+      "node": "20.18.0",
+      "pnpm": "9.15.4",
       "android": {
         "buildType": "apk"
       },
