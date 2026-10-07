@@ -14,6 +14,7 @@ import { colors } from '../theme/colors';
 import { useCustomerCart } from '../context/CustomerCartContext';
 import { useAuth } from '../context/AuthContext';
 import { AppIcon } from '../components/AppIcon';
+import { formatRs } from '../utils/formatters';
 
 interface CartScreenProps {
   onNavigateToCatalog: () => void;
@@ -137,7 +138,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({
             <Text style={styles.shippingTitle}>
               {amountNeeded === 0
                 ? 'You unlocked FREE Nationwide Delivery!'
-                : `Add Rs. ${amountNeeded.toLocaleString('en-PK')} more for FREE delivery`}
+                : `Add Rs. ${formatRs(amountNeeded)} more for FREE delivery`}
             </Text>
           </View>
           <View style={styles.progressBarBg}>
@@ -181,7 +182,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({
                   </TouchableOpacity>
 
                   <Text style={styles.itemPrice}>
-                    Rs. {item.price.toLocaleString('en-PK')}
+                    Rs. {formatRs(item.price)}
                   </Text>
 
                   <View style={styles.itemControls}>
@@ -210,7 +211,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({
 
                     {/* Line Total */}
                     <Text style={styles.lineTotal}>
-                      Rs. {(item.price * item.quantity).toLocaleString('en-PK')}
+                      Rs. {formatRs(item.price * item.quantity)}
                     </Text>
                   </View>
                 </View>
@@ -255,7 +256,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>Rs. {subtotal.toLocaleString('en-PK')}</Text>
+            <Text style={styles.summaryValue}>Rs. {formatRs(subtotal)}</Text>
           </View>
 
           <View style={styles.summaryRow}>
@@ -271,7 +272,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({
                 Discount (10%)
               </Text>
               <Text style={[styles.summaryValue, { color: colors.forest[700] }]}>
-                -Rs. {Math.round(subtotal * 0.1).toLocaleString('en-PK')}
+                -Rs. {formatRs(Math.round(subtotal * 0.1))}
               </Text>
             </View>
           )}
@@ -280,10 +281,12 @@ export const CartScreen: React.FC<CartScreenProps> = ({
             <Text style={styles.totalLabel}>Total Payable</Text>
             <Text style={styles.totalValue}>
               Rs.{' '}
-              {Math.max(
-                0,
-                subtotal + (amountNeeded === 0 ? 0 : 250) - (couponApplied ? subtotal * 0.1 : 0),
-              ).toLocaleString('en-PK')}
+              {formatRs(
+                Math.max(
+                  0,
+                  subtotal + (amountNeeded === 0 ? 0 : 250) - (couponApplied ? subtotal * 0.1 : 0),
+                ),
+              )}
             </Text>
           </View>
         </View>
@@ -295,10 +298,12 @@ export const CartScreen: React.FC<CartScreenProps> = ({
           <Text style={styles.bottomTotalLabel}>Total Amount</Text>
           <Text style={styles.bottomTotalValue}>
             Rs.{' '}
-            {Math.max(
-              0,
-              subtotal + (amountNeeded === 0 ? 0 : 250) - (couponApplied ? subtotal * 0.1 : 0),
-            ).toLocaleString('en-PK')}
+            {formatRs(
+              Math.max(
+                0,
+                subtotal + (amountNeeded === 0 ? 0 : 250) - (couponApplied ? subtotal * 0.1 : 0),
+              ),
+            )}
           </Text>
         </View>
 

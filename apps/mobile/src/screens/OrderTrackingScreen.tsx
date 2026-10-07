@@ -17,6 +17,7 @@ import {
   requestCustomerReturn,
 } from '../services/api';
 import { AppIcon, IconName } from '../components/AppIcon';
+import { formatRs } from '../utils/formatters';
 
 interface TimelineStep {
   key: string;
@@ -292,12 +293,12 @@ export const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({
                       {item.productName || item.productTitle}
                     </Text>
                     <Text style={styles.itemPriceQty}>
-                      {item.quantity}x • Rs. {unitPrice.toLocaleString('en-PK')}
+                      {item.quantity}x • Rs. {formatRs(unitPrice)}
                     </Text>
                   </View>
 
                   <Text style={styles.itemTotal}>
-                    Rs. {lineTotal.toLocaleString('en-PK')}
+                    Rs. {formatRs(lineTotal)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -310,25 +311,25 @@ export const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({
           <Text style={styles.cardTitle}>Payment Summary</Text>
           <View style={styles.sumRow}>
             <Text style={styles.sumLabel}>Subtotal</Text>
-            <Text style={styles.sumVal}>Rs. {Number(order.subtotal || 0).toLocaleString('en-PK')}</Text>
+            <Text style={styles.sumVal}>Rs. {formatRs(order.subtotal)}</Text>
           </View>
           <View style={styles.sumRow}>
             <Text style={styles.sumLabel}>Courier Fee</Text>
             <Text style={styles.sumVal}>
-              {shippingFee === 0 ? 'FREE' : `Rs. ${shippingFee.toLocaleString('en-PK')}`}
+              {shippingFee === 0 ? 'FREE' : `Rs. ${formatRs(shippingFee)}`}
             </Text>
           </View>
           {discountTotal > 0 ? (
             <View style={styles.sumRow}>
               <Text style={[styles.sumLabel, { color: '#137333' }]}>Discount</Text>
               <Text style={[styles.sumVal, { color: '#137333' }]}>
-                - Rs. {discountTotal.toLocaleString('en-PK')}
+                - Rs. {formatRs(discountTotal)}
               </Text>
             </View>
           ) : null}
           <View style={[styles.sumRow, styles.sumTotalRow]}>
             <Text style={styles.sumTotalLabel}>Total Paid / Payable</Text>
-            <Text style={styles.sumTotalVal}>Rs. {totalPayable.toLocaleString('en-PK')}</Text>
+            <Text style={styles.sumTotalVal}>Rs. {formatRs(totalPayable)}</Text>
           </View>
         </View>
 

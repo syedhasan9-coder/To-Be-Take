@@ -16,6 +16,7 @@ import { AppIcon } from '../components/AppIcon';
 import { ProductCard, DEFAULT_CARD_WIDTH } from '../components/ProductCard';
 import { ProductSkeleton } from '../components/ProductSkeleton';
 import { CategoryVisualIcon } from '../components/CategoryVisual';
+import { formatRating, safeString, getInitials } from '../utils/formatters';
 
 const { width } = Dimensions.get('window');
 const DEAL_CARD_WIDTH = 160;
@@ -304,30 +305,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.sellersScroll}
             >
-              {sellers.map((seller) => (
-                <View key={seller.id} style={styles.sellerCard}>
-                  <View style={styles.sellerAvatar}>
-                    <Text style={styles.sellerAvatarText}>
-                      {seller.storeName.substring(0, 2).toUpperCase()}
+              {sellers.map((seller) => {
+                const sName = safeString(seller.storeName || seller.ownerName, 'Artisan Seller');
+                return (
+                  <View key={seller.id} style={styles.sellerCard}>
+                    <View style={styles.sellerAvatar}>
+                      <Text style={styles.sellerAvatarText}>
+                        {getInitials(sName)}
+                      </Text>
+                    </View>
+                    <Text style={styles.sellerStoreName} numberOfLines={1}>
+                      {sName}
                     </Text>
+                    <View style={styles.sellerLocationRow}>
+                      <AppIcon name="location" size={12} color="#718077" />
+                      <Text style={styles.sellerLocationText}>
+                        {safeString(seller.city, 'Pakistan')}
+                      </Text>
+                    </View>
+                    <View style={styles.sellerRating}>
+                      <AppIcon name="shield" size={12} color={colors.forest[700]} />
+                      <Text style={styles.sellerRatingText}>
+                        {seller.rating ? `${formatRating(seller.rating, '5.0')} Verified` : 'Verified Artisan'}
+                      </Text>
+                    </View>
                   </View>
-                  <Text style={styles.sellerStoreName} numberOfLines={1}>
-                    {seller.storeName}
-                  </Text>
-                  <View style={styles.sellerLocationRow}>
-                    <AppIcon name="location" size={12} color="#718077" />
-                    <Text style={styles.sellerLocationText}>
-                      {seller.city || 'Pakistan'}
-                    </Text>
-                  </View>
-                  <View style={styles.sellerRating}>
-                    <AppIcon name="shield" size={12} color={colors.forest[700]} />
-                    <Text style={styles.sellerRatingText}>
-                      {seller.rating ? `${seller.rating.toFixed(1)} Verified` : 'Verified Artisan'}
-                    </Text>
-                  </View>
-                </View>
-              ))}
+                );
+              })}
             </ScrollView>
           </View>
         )}

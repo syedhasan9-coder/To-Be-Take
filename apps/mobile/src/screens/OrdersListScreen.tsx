@@ -11,6 +11,7 @@ import { colors } from '../theme/colors';
 import { OrderDetailItem } from '@tobetake/shared-types';
 import { getCustomerOrders } from '../services/api';
 import { AppIcon } from '../components/AppIcon';
+import { formatRs } from '../utils/formatters';
 
 interface OrdersListScreenProps {
   onNavigateBack: () => void;
@@ -145,7 +146,7 @@ export const OrdersListScreen: React.FC<OrdersListScreenProps> = ({
                   {item.items.length} {item.items.length === 1 ? 'item' : 'items'}
                 </Text>
                 <Text style={styles.orderPrice}>
-                  Rs. {item.totalAmount.toLocaleString('en-PK')}
+                  Rs. {formatRs(item.totalAmount)}
                 </Text>
               </View>
 

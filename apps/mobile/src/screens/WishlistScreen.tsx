@@ -14,6 +14,7 @@ import { CustomerWishlistItem } from '@tobetake/shared-types';
 import { useCustomerCart } from '../context/CustomerCartContext';
 import { useAuth } from '../context/AuthContext';
 import { AppIcon } from '../components/AppIcon';
+import { formatRs } from '../utils/formatters';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 44) / 2;
@@ -136,10 +137,10 @@ export const WishlistScreen: React.FC<WishlistScreenProps> = ({
                 </Text>
 
                 <View style={styles.priceRow}>
-                  <Text style={styles.price}>Rs. {item.price.toLocaleString('en-PK')}</Text>
-                  {item.compareAtPrice && item.compareAtPrice > item.price && (
+                  <Text style={styles.price}>Rs. {formatRs(item.price)}</Text>
+                  {Boolean(item.compareAtPrice && item.compareAtPrice > item.price) && (
                     <Text style={styles.comparePrice}>
-                      Rs. {item.compareAtPrice.toLocaleString('en-PK')}
+                      Rs. {formatRs(item.compareAtPrice)}
                     </Text>
                   )}
                 </View>

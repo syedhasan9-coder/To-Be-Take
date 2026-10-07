@@ -23,6 +23,7 @@ import {
 } from '../services/api';
 import { useCustomerCart } from '../context/CustomerCartContext';
 import { AppIcon } from '../components/AppIcon';
+import { formatRs } from '../utils/formatters';
 
 interface CheckoutScreenProps {
   onNavigateBack: () => void;
@@ -350,14 +351,14 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
             <Text style={styles.summaryVal}>
-              Rs. {(preview?.subtotal || cart?.subtotal || 0).toLocaleString('en-PK')}
+              Rs. {formatRs(preview?.subtotal || cart?.subtotal || 0)}
             </Text>
           </View>
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Courier Shipping</Text>
             <Text style={styles.summaryVal}>
-              {preview?.shippingFee === 0 ? 'FREE' : `Rs. ${(preview?.shippingFee || 250).toLocaleString('en-PK')}`}
+              {preview?.shippingFee === 0 ? 'FREE' : `Rs. ${formatRs(preview?.shippingFee || 250)}`}
             </Text>
           </View>
 
@@ -365,14 +366,14 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
             <View style={styles.summaryRow}>
               <Text style={[styles.summaryLabel, { color: '#137333' }]}>Coupon Discount</Text>
               <Text style={[styles.summaryVal, { color: '#137333' }]}>
-                - Rs. {preview.discount.toLocaleString('en-PK')}
+                - Rs. {formatRs(preview.discount)}
               </Text>
             </View>
           ) : null}
 
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total Payable (PKR)</Text>
-            <Text style={styles.totalVal}>Rs. {totalAmount.toLocaleString('en-PK')}</Text>
+            <Text style={styles.totalVal}>Rs. {formatRs(totalAmount)}</Text>
           </View>
         </View>
       </ScrollView>
@@ -381,7 +382,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
       <View style={styles.bottomBar}>
         <View>
           <Text style={styles.bottomLabel}>Payable Total</Text>
-          <Text style={styles.bottomPrice}>Rs. {totalAmount.toLocaleString('en-PK')}</Text>
+          <Text style={styles.bottomPrice}>Rs. {formatRs(totalAmount)}</Text>
         </View>
 
         <TouchableOpacity

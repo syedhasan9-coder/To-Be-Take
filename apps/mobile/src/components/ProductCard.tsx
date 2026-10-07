@@ -26,6 +26,8 @@ interface ProductCardProps {
   style?: ViewStyle;
 }
 
+import { formatRs, formatRating, safeString } from '../utils/formatters';
+
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onPress,
@@ -37,14 +39,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   style,
 }) => {
   const img = product.images?.[0];
-  const hasDiscount =
-    product.compareAtPrice && product.compareAtPrice > product.price;
-  const discountPercent = hasDiscount
-    ? Math.round(
-        ((product.compareAtPrice! - product.price) / product.compareAtPrice!) * 100,
-      )
+  const price = Number(product.price) || 0;
+  const compareAtPrice = product.compareAtPrice ? Number(product.compareAtPrice) : null;
+  const hasDiscount = Boolean(compareAtPrice && compareAtPrice > price);
+  const discountPercent = hasDiscount && compareAtPrice
+    ? Math.round(((compareAtPrice - price) / compareAtPrice) * 100)
     : 0;
-  const isOutOfStock = product.stockQuantity <= 0;
+  const isOutOfStock = Boolean(product.stockQuantity !== undefined && product.stockQuantity !== null && product.stockQuantity <= 0);
 
   return (
     <View style={[styles.card, { width: cardWidth }, style]}>
@@ -52,7 +53,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         onPress={() => onPress(product.id)}
         activeOpacity={0.85}
         accessibilityRole="button"
-        accessibilityLabel={`${product.name}, Rs. ${product.price.toLocaleString('en-PK')}`}
+        accessibilityLabel={`${product.name || 'Product'}, Rs. ${formatRs(price)}`}
       >
         <View style={styles.imageWrapper}>
           {img ? (
@@ -99,30 +100,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         <View style={styles.cardBody}>
           <Text style={styles.categoryTag} numberOfLines={1}>
-            {product.categoryName?.toUpperCase() || 'MARKETPLACE'}
+            {safeString(product.categoryName, 'MARKETPLACE').toUpperCase()}
           </Text>
 
           <Text style={styles.title} numberOfLines={2}>
-            {product.name}
+            {product.name || 'Pakistani Handcrafted Item'}
           </Text>
 
           {/* Rating */}
           <View style={styles.ratingRow}>
             <AppIcon name="star" size={13} color={colors.gold[500]} />
             <Text style={styles.ratingText}>
-              {product.rating ? product.rating.toFixed(1) : '4.8'}
+              {formatRating(product.rating, '4.8')}
             </Text>
-            <Text style={styles.reviewCount}>({product.reviewCount || 8})</Text>
+            <Text style={styles.reviewCount}>({Number(product.reviewCount) || 8})</Text>
           </View>
 
           {/* Price */}
           <View style={styles.priceRow}>
             <Text style={styles.price}>
-              Rs. {product.price.toLocaleString('en-PK')}
+              Rs. {formatRs(price)}
             </Text>
-            {hasDiscount && (
+            {hasDiscount && compareAtPrice !== null && (
               <Text style={styles.comparePrice}>
-                Rs. {product.compareAtPrice!.toLocaleString('en-PK')}
+                Rs. {formatRs(compareAtPrice)}
               </Text>
             )}
           </View>

@@ -48,11 +48,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, errorMessage: error.message || 'An unexpected error occurred' };
+    return {
+      hasError: true,
+      errorMessage: error?.message || (typeof error === 'string' ? error : 'An unexpected rendering error occurred'),
+    };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error('ErrorBoundary caught an unhandled error:', error, errorInfo);
+    console.error('ErrorBoundary caught an unhandled render error:', error, errorInfo);
   }
 
   handleReset = (): void => {
@@ -76,6 +79,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <Text style={styles.errorDescription}>
             The application encountered an unexpected issue while rendering.
           </Text>
+          {Boolean(this.state.errorMessage) && (
+            <View style={styles.errorDetailsBox}>
+              <Text style={styles.errorDetailsText} numberOfLines={3}>
+                {this.state.errorMessage}
+              </Text>
+            </View>
+          )}
           <TouchableOpacity
             style={styles.retryButton}
             onPress={this.handleReset}
@@ -468,5 +478,20 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 15,
     fontWeight: '600',
+  },
+  errorDetailsBox: {
+    backgroundColor: '#fee2e2',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 20,
+    maxWidth: 320,
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+  },
+  errorDetailsText: {
+    fontSize: 12,
+    color: '#991b1b',
+    textAlign: 'center',
+    fontFamily: Platform.OS === 'android' ? 'monospace' : 'Courier',
   },
 });

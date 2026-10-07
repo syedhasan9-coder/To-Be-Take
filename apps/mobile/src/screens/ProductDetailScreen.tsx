@@ -17,6 +17,7 @@ import { getCustomerProductDetail, submitCustomerReview } from '../services/api'
 import { useCustomerCart } from '../context/CustomerCartContext';
 import { useAuth } from '../context/AuthContext';
 import { AppIcon } from '../components/AppIcon';
+import { formatRs, formatRating, safeString } from '../utils/formatters';
 
 interface ProductDetailScreenProps {
   productId: string;
@@ -192,10 +193,10 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
             </View>
           )}
 
-          {product.compareAtPrice && product.compareAtPrice > product.price && (
+          {Boolean(product.compareAtPrice && product.compareAtPrice > product.price) && (
             <View style={styles.discountTag}>
               <Text style={styles.discountTagText}>
-                -{Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}% OFF
+                -{Math.round(((Number(product.compareAtPrice) - Number(product.price)) / Number(product.compareAtPrice)) * 100)}% OFF
               </Text>
             </View>
           )}
@@ -226,7 +227,7 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
           <View style={styles.badgeRow}>
             <View style={styles.categoryBadge}>
               <Text style={styles.categoryBadgeText}>
-                {product.categoryName?.toUpperCase() || 'MARKETPLACE'}
+                {safeString(product.categoryName, 'MARKETPLACE').toUpperCase()}
               </Text>
             </View>
             <View style={[styles.stockBadge, product.inStock ? styles.inStock : styles.outOfStock]}>
@@ -236,30 +237,30 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
             </View>
           </View>
 
-          <Text style={styles.productTitle}>{product.name}</Text>
+          <Text style={styles.productTitle}>{product.name || 'Artisanal Treasure'}</Text>
 
           <View style={styles.ratingSection}>
             <AppIcon name="star" size={15} color={colors.gold[500]} />
             <Text style={styles.stars}>
-              {product.rating ? product.rating.toFixed(1) : '4.9'}
+              {formatRating(product.rating, '4.9')}
             </Text>
             <Text style={styles.reviewsCount}>
-              ({product.reviewCount || 14} customer reviews)
+              ({Number(product.reviewCount) || 14} customer reviews)
             </Text>
           </View>
 
           <View style={styles.priceContainer}>
-            <Text style={styles.price}>Rs. {product.price.toLocaleString('en-PK')}</Text>
-            {product.compareAtPrice && product.compareAtPrice > product.price && (
+            <Text style={styles.price}>Rs. {formatRs(product.price)}</Text>
+            {Boolean(product.compareAtPrice && product.compareAtPrice > product.price) && (
               <Text style={styles.comparePrice}>
-                Rs. {product.compareAtPrice.toLocaleString('en-PK')}
+                Rs. {formatRs(product.compareAtPrice)}
               </Text>
             )}
           </View>
         </View>
 
         {/* Quantity Stepper */}
-        {product.inStock && (
+        {Boolean(product.inStock) && (
           <View style={styles.quantityCard}>
             <Text style={styles.quantityLabel}>Quantity</Text>
             <View style={styles.stepper}>
