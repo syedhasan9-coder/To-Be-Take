@@ -15,7 +15,7 @@ interface CategoryVisualConfig {
 }
 
 export function getCategoryVisualConfig(slugOrName: string = ''): CategoryVisualConfig {
-  const norm = slugOrName.toLowerCase();
+  const norm = (slugOrName || '').toString().toLowerCase();
 
   if (norm.includes('audio') || norm.includes('headphone')) {
     return {
@@ -148,13 +148,15 @@ export const CategoryVisualIcon: React.FC<CategoryVisualIconProps> = ({
           width: containerSize,
           height: containerSize,
           borderRadius: containerSize / 2,
-          backgroundColor: config.bgTint,
-          borderColor: config.borderColor,
+          backgroundColor: config?.bgTint || '#f4f6f4',
+          borderColor: config?.borderColor || '#dce4dc',
         },
         style,
       ]}
     >
-      {config.iconComponent({ size, color: config.iconColor })}
+      {typeof config?.iconComponent === 'function' ? (
+        config.iconComponent({ size, color: config.iconColor || colors.forest[800] })
+      ) : null}
     </View>
   );
 };
