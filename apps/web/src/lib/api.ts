@@ -48,16 +48,6 @@ export function setStoredAuthUser(user: StoredAuthUser): void {
     const authData = JSON.stringify(user);
     sessionStorage.setItem('tobetake_auth_user', authData);
     localStorage.setItem('tobetake_auth_user', authData);
-
-    // 3. Print required development diagnostic
-    console.log('[AUTH SESSION ESTABLISHED]', {
-      'LOGIN USER': user.username,
-      'EMAIL': user.email,
-      'USER ID': user.id,
-      'ROLE': user.roleCode,
-      'SELLER ID': user.id,
-      'STORE': user.storeName,
-    });
   } catch (err) {
     console.error('Failed to save auth user session:', err);
   }
@@ -68,7 +58,6 @@ export function clearStoredAuthUser(): void {
   try {
     sessionStorage.removeItem('tobetake_auth_user');
     localStorage.removeItem('tobetake_auth_user');
-    console.log('[AUTH SESSION CLEARED]');
   } catch (err) {
     console.error('Failed to clear auth user session:', err);
   }
@@ -88,14 +77,6 @@ export function getAuthHeaders(additionalHeaders?: HeadersInit): Headers {
     if (user.email && !headers.has('x-user-email')) {
       headers.set('x-user-email', user.email);
     }
-
-    console.log('[AUTHENTICATED SELLER IDENTITY]', {
-      'LOGIN USER': user.username,
-      'EMAIL': user.email,
-      'USER ID': user.id,
-      'ROLE': user.roleCode,
-      'SELLER ID': user.id,
-    });
   }
 
   return headers;

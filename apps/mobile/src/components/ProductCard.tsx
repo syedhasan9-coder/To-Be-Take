@@ -11,6 +11,7 @@ import {
 import { colors } from '../theme/colors';
 import { CustomerStorefrontProduct } from '@tobetake/shared-types';
 import { AppIcon } from './AppIcon';
+import { formatRs, formatRating, safeString } from '../utils/formatters';
 
 const { width } = Dimensions.get('window');
 export const DEFAULT_CARD_WIDTH = (width - 44) / 2;
@@ -25,8 +26,6 @@ interface ProductCardProps {
   cardWidth?: number;
   style?: ViewStyle;
 }
-
-import { formatRs, formatRating, safeString } from '../utils/formatters';
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
