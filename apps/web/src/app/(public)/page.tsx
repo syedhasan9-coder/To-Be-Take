@@ -615,11 +615,11 @@ function StorefrontContent(): React.ReactElement {
                       boxShadow: '0 2px 8px rgba(20, 41, 31, 0.15)',
                     }}
                   >
-                    {seller.storeName[0]}
+                    {seller.storeName?.[0] || seller.ownerName?.[0] || 'S'}
                   </div>
                   <div>
                     <h3 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#14291f', margin: 0 }}>
-                      {seller.storeName}
+                      {seller.storeName || seller.ownerName || 'Verified Artisan'}
                     </h3>
                     <p style={{ fontSize: '0.75rem', color: '#526359', margin: '0.2rem 0 0' }}>
                       📍 {seller.city} • <span style={{ color: '#196338', fontWeight: 700 }}>✓ Verified Artisan</span>

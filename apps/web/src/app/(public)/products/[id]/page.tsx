@@ -11,7 +11,7 @@ import { ProductCard } from '../../../../components/customer/ProductCard';
 export default function ProductDetailPage(): React.ReactElement {
   const params = useParams();
   const router = useRouter();
-  const idOrSlug = params.id as string;
+  const idOrSlug = (params?.id || params?.slug) as string;
 
   const { addToCart, buyNow, isWishlisted, toggleWishlist, isAuthenticated } = useCustomer();
 
@@ -140,8 +140,13 @@ export default function ProductDetailPage(): React.ReactElement {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={selectedImage || product.images[0]}
+              src={selectedImage || (product.images && product.images[0]) || 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=600'}
               alt={product.name}
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement;
+                target.onerror = null;
+                target.src = 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=600';
+              }}
               style={{
                 position: 'absolute',
                 top: 0,

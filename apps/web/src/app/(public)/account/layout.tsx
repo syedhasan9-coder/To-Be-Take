@@ -12,13 +12,22 @@ export default function AccountLayout({
 }): React.ReactElement {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isAuthenticated, logout, unreadNotificationsCount } = useCustomer();
+  const { user, isAuthenticated, isInitialized, logout, unreadNotificationsCount } = useCustomer();
 
   useEffect(() => {
+    if (!isInitialized) return;
     if (!isAuthenticated && typeof window !== 'undefined') {
       router.push('/login/user?redirect=' + encodeURIComponent(pathname));
     }
-  }, [isAuthenticated, pathname, router]);
+  }, [isAuthenticated, isInitialized, pathname, router]);
+
+  if (!isInitialized) {
+    return (
+      <div style={{ maxWidth: '1320px', margin: '4rem auto', textAlign: 'center', padding: '3rem 1.5rem' }}>
+        <p style={{ color: '#526359', fontSize: '1rem', fontWeight: 600 }}>Loading customer workspace...</p>
+      </div>
+    );
+  }
 
   const navItems = [
     { label: '📊 Dashboard Overview', href: '/account' },

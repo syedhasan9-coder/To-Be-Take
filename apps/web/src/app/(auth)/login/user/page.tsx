@@ -28,24 +28,43 @@ const initialFormState: LoginFormData = {
 
 export default function UserLoginPage(): React.ReactElement {
   const router = useRouter();
-  const { login: customerLogin, isAuthenticated } = useCustomer();
+  const { login: customerLogin, isAuthenticated, isInitialized } = useCustomer();
   const [formData, setFormData] = useState<LoginFormData>(initialFormState);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  // If already authenticated customer and no intent, redirect to intended page
+  // If already authenticated customer, redirect to intended page
   useEffect(() => {
-    if (isAuthenticated && typeof window !== 'undefined') {
+    if (!isInitialized || !isAuthenticated) return;
+    if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const intent = urlParams.get('intent');
-      if (!intent) {
-        const redirectParam = urlParams.get('redirect');
-        const targetUrl = sanitizeRedirectUrl(redirectParam, '/');
-        router.push(targetUrl);
+      const redirectParam = urlParams.get('redirect');
+
+      if (intent === 'checkout' || redirectParam === '/checkout') {
+        router.push('/checkout');
+        return;
       }
+      if (intent === 'buy_now') {
+        router.push('/checkout');
+        return;
+      }
+      if (intent === 'add_to_cart') {
+        const target = sanitizeRedirectUrl(redirectParam, '/cart');
+        router.push(target);
+        return;
+      }
+      if (intent === 'wishlist') {
+        const productId = urlParams.get('productId');
+        const target = sanitizeRedirectUrl(redirectParam, productId ? `/products/${productId}` : '/');
+        router.push(target);
+        return;
+      }
+      const targetUrl = sanitizeRedirectUrl(redirectParam, '/');
+      router.push(targetUrl);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isInitialized, router]);
 
   // Validate single field
   const validateField = (name: string, value: string): string | undefined => {
@@ -208,11 +227,13 @@ export default function UserLoginPage(): React.ReactElement {
             return;
           }
 
-          if (intent === 'buy_now' && productId) {
-            try {
-              await customerApi.addToCart(productId, quantity);
-            } catch (err) {
-              console.warn('Auto-resumed buy_now error:', err);
+          if (intent === 'buy_now') {
+            if (productId) {
+              try {
+                await customerApi.addToCart(productId, quantity);
+              } catch (err) {
+                console.warn('Auto-resumed buy_now error:', err);
+              }
             }
             router.push('/checkout');
             return;
@@ -229,7 +250,7 @@ export default function UserLoginPage(): React.ReactElement {
             return;
           }
 
-          if (intent === 'checkout') {
+          if (intent === 'checkout' || redirectParam === '/checkout') {
             router.push('/checkout');
             return;
           }

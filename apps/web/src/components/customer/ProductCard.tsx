@@ -62,7 +62,7 @@ export function ProductCard({ product, featured }: ProductCardProps): React.Reac
           onClick={handleToggleWishlist}
           aria-label={wish ? 'Remove from wishlist' : 'Add to wishlist'}
         >
-          <svg viewBox="0 0 24 24" fill={wish ? '#E05D5D' : 'none'} stroke={wish ? '#E05D5D' : '#14291f'} strokeWidth="2" className="heart-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill={wish ? '#E05D5D' : 'none'} stroke={wish ? '#E05D5D' : '#14291f'} strokeWidth="2" className="heart-icon" style={{ width: '18px', height: '18px', display: 'block' }}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
           </svg>
         </button>
@@ -74,6 +74,11 @@ export function ProductCard({ product, featured }: ProductCardProps): React.Reac
           alt={product.name || 'Artisanal Product Image'}
           className="product-img"
           loading="lazy"
+          onError={(e) => {
+            const target = e.currentTarget as HTMLImageElement;
+            target.onerror = null;
+            target.src = 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=500';
+          }}
         />
 
         {/* Stock Badge Overlay if low or out of stock */}

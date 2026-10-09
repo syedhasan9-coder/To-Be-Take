@@ -14,14 +14,26 @@ jest.mock('next/navigation', () => ({
 }));
 
 // Mock CustomerContext
+let mockAuthState = {
+  isAuthenticated: false,
+  isInitialized: true,
+  user: null as any,
+  cartCount: 0,
+  wishlistCount: 0,
+};
+
+const mockLogin = jest.fn();
+const mockLogout = jest.fn();
+
 jest.mock('../../../../components/customer/CustomerContext', () => ({
   useCustomer: () => ({
-    login: jest.fn(),
-    logout: jest.fn(),
-    isAuthenticated: false,
-    user: null,
-    cartCount: 0,
-    wishlistCount: 0,
+    login: mockLogin,
+    logout: mockLogout,
+    isAuthenticated: mockAuthState.isAuthenticated,
+    isInitialized: mockAuthState.isInitialized,
+    user: mockAuthState.user,
+    cartCount: mockAuthState.cartCount,
+    wishlistCount: mockAuthState.wishlistCount,
   }),
 }));
 
@@ -69,6 +81,14 @@ describe('UserLoginPage Component (/login/user)', () => {
     jest.clearAllMocks();
     global.fetch = jest.fn();
     sessionStorage.clear();
+    mockAuthState = {
+      isAuthenticated: false,
+      isInitialized: true,
+      user: null,
+      cartCount: 0,
+      wishlistCount: 0,
+    };
+    window.history.pushState({}, 'Login', '/login/user');
   });
 
   describe('Rendering & Layout', () => {
@@ -165,7 +185,7 @@ describe('UserLoginPage Component (/login/user)', () => {
   });
 
   describe('API Authentication Flow & Role Redirect', () => {
-    it('should successfully log in Buyer, store safe user info, and redirect to /user/dashboard', async () => {
+    it('should successfully log in Buyer, store safe user info, and redirect to /', async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -211,6 +231,69 @@ describe('UserLoginPage Component (/login/user)', () => {
       expect(stored.roleCode).toBe('CUST');
       expect(stored.password).toBeUndefined();
       expect(stored.passwordHash).toBeUndefined();
+    });
+
+    it('should redirect to /checkout when intent=checkout is in URL query parameters', async () => {
+      window.history.pushState({}, 'Login', '/login/user?intent=checkout&redirect=%2Fcheckout');
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockBuyerLoginSuccessResponse,
+      });
+
+      render(<UserLoginPage />);
+
+      await userEvent.type(
+        screen.getByPlaceholderText('Enter username or email address'),
+        'buyer_bilal',
+      );
+      await userEvent.type(screen.getByPlaceholderText('Enter password'), 'Password123!');
+
+      fireEvent.click(screen.getByRole('button', { name: /sign in as buyer/i }));
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/checkout');
+      });
+    });
+
+    it('should auto-redirect already-authenticated customer visiting login page with intent=checkout to /checkout', async () => {
+      mockAuthState = {
+        isAuthenticated: true,
+        isInitialized: true,
+        user: { id: 'buyer-uuid-12345', firstName: 'Bilal', lastName: 'Ahmed', email: 'bilal@test.com', role: 'Buyer', roleCode: 'CUST', username: 'buyer_bilal' },
+        cartCount: 1,
+        wishlistCount: 0,
+      };
+      window.history.pushState({}, 'Login', '/login/user?intent=checkout&redirect=%2Fcheckout');
+
+      render(<UserLoginPage />);
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/checkout');
+      });
+    });
+
+    it('should prevent open redirects and fall back to / if redirect target is external', async () => {
+      window.history.pushState({}, 'Login', '/login/user?redirect=https%3A%2F%2Fevil.com');
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockBuyerLoginSuccessResponse,
+      });
+
+      render(<UserLoginPage />);
+
+      await userEvent.type(
+        screen.getByPlaceholderText('Enter username or email address'),
+        'buyer_bilal',
+      );
+      await userEvent.type(screen.getByPlaceholderText('Enter password'), 'Password123!');
+
+      fireEvent.click(screen.getByRole('button', { name: /sign in as buyer/i }));
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/');
+      });
     });
 
     it('should disable submit button and show loading spinner during login request', async () => {

@@ -7,7 +7,15 @@ import { useCustomer } from '../../../components/customer/CustomerContext';
 
 export default function WishlistPage(): React.ReactElement {
   const router = useRouter();
-  const { wishlist, removeFromWishlist, addToCart, isAuthenticated } = useCustomer();
+  const { wishlist, removeFromWishlist, addToCart, isAuthenticated, isInitialized } = useCustomer();
+
+  if (!isInitialized) {
+    return (
+      <div style={{ maxWidth: '1320px', margin: '4rem auto', textAlign: 'center', padding: '3rem 1.5rem' }}>
+        <p style={{ color: '#526359', fontSize: '1rem', fontWeight: 600 }}>Loading saved wishlist...</p>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (

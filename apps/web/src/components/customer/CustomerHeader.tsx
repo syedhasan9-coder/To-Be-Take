@@ -79,8 +79,8 @@ export function CustomerHeader(): React.ReactElement {
         <div className="navbar-container">
           {/* Logo Brand */}
           <Link href="/" className="customer-brand" aria-label="ToBeTake Marketplace">
-            <div className="brand-leaf-logo">
-              <svg viewBox="0 0 32 32" fill="none" className="brand-leaf-svg">
+            <div className="brand-leaf-logo" style={{ width: '36px', height: '36px', minWidth: '36px', flexShrink: 0 }}>
+              <svg viewBox="0 0 32 32" fill="none" width="36" height="36" className="brand-leaf-svg" style={{ width: '36px', height: '36px', display: 'block' }}>
                 <path
                   d="M16 2C8 6 4 14 6 22C8 28 14 30 16 30C18 30 24 28 26 22C28 14 24 6 16 2Z"
                   fill="#1C3D2E"
@@ -151,7 +151,7 @@ export function CustomerHeader(): React.ReactElement {
             {/* Wishlist */}
             <Link href="/wishlist" className="action-icon-btn" aria-label="Wishlist">
               <div className="icon-wrapper">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="action-svg">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" className="action-svg" style={{ width: '22px', height: '22px', display: 'block' }}>
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -166,7 +166,7 @@ export function CustomerHeader(): React.ReactElement {
             {/* Cart */}
             <Link href="/cart" className="action-icon-btn" aria-label="Shopping Cart">
               <div className="icon-wrapper">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="action-svg">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" className="action-svg" style={{ width: '22px', height: '22px', display: 'block' }}>
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -188,7 +188,7 @@ export function CustomerHeader(): React.ReactElement {
                 aria-label="User Account Menu"
               >
                 <div className="icon-wrapper">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="action-svg">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" className="action-svg" style={{ width: '22px', height: '22px', display: 'block' }}>
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -276,7 +276,7 @@ export function CustomerHeader(): React.ReactElement {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle Navigation Menu"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="menu-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" className="menu-icon" style={{ width: '24px', height: '24px', display: 'block' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
             </button>

@@ -12,9 +12,12 @@ export function BotanicalArtwork(): React.ReactElement {
     <div className="auth-sidebar-bg-artwork" aria-hidden="true">
       <svg
         viewBox="0 0 480 420"
+        width="100%"
+        height="100%"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         preserveAspectRatio="xMinYMax meet"
+        style={{ maxWidth: '100%', maxHeight: '100%', display: 'block' }}
       >
         <defs>
           {/* Ambient Lighting */}

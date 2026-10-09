@@ -97,6 +97,7 @@ interface CustomerContextType {
   user: CustomerUser | null;
   token: string | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
   login: (token: string, user: CustomerUser) => Promise<void>;
   logout: () => void;
   cart: CustomerCartSummary | null;
@@ -124,6 +125,7 @@ const CustomerContext = createContext<CustomerContextType | undefined>(undefined
 export function CustomerProvider({ children }: { children: React.ReactNode }): React.ReactElement {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<CustomerUser | null>(null);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [cart, setCart] = useState<CustomerCartSummary | null>(null);
   const [wishlist, setWishlist] = useState<CustomerWishlistItem[]>([]);
   const [notifications, setNotifications] = useState<CustomerNotificationItem[]>([]);
@@ -141,6 +143,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }): R
       const initialGuestCart = getGuestCartFromStorage();
       setCart(initialGuestCart);
     }
+    setIsInitialized(true);
   }, []);
 
   const refreshCart = useCallback(async () => {
@@ -203,6 +206,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }): R
     setCustomerStoredUser(newUser);
     setToken(newToken);
     setUser(newUser);
+    setIsInitialized(true);
 
     // Merge any existing guest cart into the server cart
     try {
@@ -251,7 +255,8 @@ export function CustomerProvider({ children }: { children: React.ReactNode }): R
     quantity = 1,
     productDetails?: Partial<CustomerCartItem>,
   ) => {
-    if (token) {
+    const currentToken = token || getCustomerAuthToken();
+    if (currentToken) {
       const updated = await customerApi.addToCart(productId, quantity);
       setCart(updated);
       return;
@@ -335,7 +340,8 @@ export function CustomerProvider({ children }: { children: React.ReactNode }): R
   };
 
   const buyNow = async (productId: string, quantity = 1) => {
-    if (!token) {
+    const currentToken = token || getCustomerAuthToken();
+    if (!currentToken) {
       await addToCart(productId, quantity);
       const redirectUrl = `/login/user?intent=checkout&redirect=${encodeURIComponent('/checkout')}`;
       if (typeof window !== 'undefined') {
@@ -351,7 +357,8 @@ export function CustomerProvider({ children }: { children: React.ReactNode }): R
   };
 
   const updateCartQuantity = async (itemId: string, quantity: number) => {
-    if (token) {
+    const currentToken = token || getCustomerAuthToken();
+    if (currentToken) {
       const updated = await customerApi.updateCartQuantity(itemId, quantity);
       setCart(updated);
       return;
@@ -384,7 +391,8 @@ export function CustomerProvider({ children }: { children: React.ReactNode }): R
   };
 
   const removeFromCart = async (itemId: string) => {
-    if (token) {
+    const currentToken = token || getCustomerAuthToken();
+    if (currentToken) {
       const updated = await customerApi.removeFromCart(itemId);
       setCart(updated);
       return;
@@ -401,7 +409,8 @@ export function CustomerProvider({ children }: { children: React.ReactNode }): R
   };
 
   const clearCart = async () => {
-    if (token) {
+    const currentToken = token || getCustomerAuthToken();
+    if (currentToken) {
       await customerApi.clearCart();
     }
     clearGuestCartFromStorage();
@@ -413,7 +422,8 @@ export function CustomerProvider({ children }: { children: React.ReactNode }): R
   };
 
   const toggleWishlist = async (productId: string, returnUrl?: string) => {
-    if (!token) {
+    const currentToken = token || getCustomerAuthToken();
+    if (!currentToken) {
       const currentPath =
         typeof window !== 'undefined'
           ? returnUrl || window.location.pathname + window.location.search
@@ -432,13 +442,15 @@ export function CustomerProvider({ children }: { children: React.ReactNode }): R
   };
 
   const removeFromWishlist = async (productId: string) => {
-    if (!token) return;
+    const currentToken = token || getCustomerAuthToken();
+    if (!currentToken) return;
     const res = await customerApi.toggleWishlist(productId);
     setWishlist(res.items);
   };
 
   const markNotificationRead = async (id: string) => {
-    if (!token) return;
+    const currentToken = token || getCustomerAuthToken();
+    if (!currentToken) return;
     await customerApi.markNotificationRead(id);
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
@@ -447,7 +459,8 @@ export function CustomerProvider({ children }: { children: React.ReactNode }): R
   };
 
   const markAllNotificationsRead = async () => {
-    if (!token) return;
+    const currentToken = token || getCustomerAuthToken();
+    if (!currentToken) return;
     await customerApi.markAllNotificationsRead();
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     setUnreadNotificationsCount(0);
@@ -462,6 +475,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }): R
         user,
         token,
         isAuthenticated: !!token && !!user,
+        isInitialized,
         login,
         logout,
         cart,

@@ -1,10 +1,20 @@
-import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiResponse, CustomerStorefrontData, CategoryItem, CustomerSellerSpotlight } from '@tobetake/shared-types';
+import { Controller, Get, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  ApiResponse,
+  CustomerStorefrontData,
+  CategoryItem,
+  CustomerSellerSpotlight,
+  CustomerProductQueryParams,
+} from '@tobetake/shared-types';
 import { CustomerStorefrontService } from '../services/customer-storefront.service';
+import { CustomerProductsService } from '../services/customer-products.service';
 
 @Controller('customer/storefront')
 export class CustomerStorefrontController {
-  constructor(private readonly storefrontService: CustomerStorefrontService) {}
+  constructor(
+    private readonly storefrontService: CustomerStorefrontService,
+    private readonly productsService: CustomerProductsService,
+  ) {}
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -14,6 +24,18 @@ export class CustomerStorefrontController {
       success: true,
       message: 'Storefront data retrieved successfully',
       data,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get('products')
+  @HttpCode(HttpStatus.OK)
+  async getProducts(@Query() query: CustomerProductQueryParams): Promise<ApiResponse<any>> {
+    const result = await this.productsService.findProducts(query);
+    return {
+      success: true,
+      message: 'Products retrieved successfully',
+      data: result,
       timestamp: new Date().toISOString(),
     };
   }

@@ -41,7 +41,7 @@ function CheckoutContent(): React.ReactElement {
   const searchParams = useSearchParams();
   const couponFromQuery = searchParams.get('coupon') || '';
 
-  const { isAuthenticated, user, refreshCart } = useCustomer();
+  const { isAuthenticated, isInitialized, user, refreshCart } = useCustomer();
 
   const [addresses, setAddresses] = useState<CustomerAddressItem[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
@@ -69,6 +69,7 @@ function CheckoutContent(): React.ReactElement {
 
   // 1. Check Auth & Load Addresses
   useEffect(() => {
+    if (!isInitialized) return;
     if (!isAuthenticated) {
       router.push('/login/user?intent=checkout&redirect=' + encodeURIComponent('/checkout'));
       return;
@@ -92,11 +93,11 @@ function CheckoutContent(): React.ReactElement {
       }
     }
     initCheckout();
-  }, [isAuthenticated, router, user]);
+  }, [isAuthenticated, isInitialized, router, user]);
 
   // 2. Refresh Preview when options change
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isInitialized || !isAuthenticated) return;
     async function loadPreview() {
       setLoadingPreview(true);
       try {
@@ -113,7 +114,7 @@ function CheckoutContent(): React.ReactElement {
       }
     }
     loadPreview();
-  }, [isAuthenticated, selectedAddressId, couponCode, shippingMethod]);
+  }, [isAuthenticated, isInitialized, selectedAddressId, couponCode, shippingMethod]);
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,6 +166,14 @@ function CheckoutContent(): React.ReactElement {
       setSubmitting(false);
     }
   };
+
+  if (!isInitialized) {
+    return (
+      <div style={{ maxWidth: '1240px', margin: '4rem auto', textAlign: 'center', padding: '3rem 1.5rem' }}>
+        <p style={{ color: '#526359', fontSize: '1rem', fontWeight: 600 }}>Loading secure checkout...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '1.5rem 1.5rem 4rem' }}>
