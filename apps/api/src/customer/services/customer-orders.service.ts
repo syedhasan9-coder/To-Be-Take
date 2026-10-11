@@ -12,7 +12,7 @@ export class CustomerOrdersService {
       { key: 'PENDING', label: 'Order Placed', desc: 'Order received and waiting processing', completed: false, active: false, timestamp: createdAt.toISOString() },
       { key: 'CONFIRMED', label: 'Confirmed', desc: 'Order verified by seller', completed: false, active: false, timestamp: null },
       { key: 'PROCESSING', label: 'Processing', desc: 'Parcel packed at warehouse', completed: false, active: false, timestamp: null },
-      { key: 'SHIPPED', label: 'Shipped', desc: `Handed over to ${shipment?.carrier || 'TCS Express'}`, completed: false, active: false, timestamp: null },
+      { key: 'SHIPPED', label: 'Shipped', desc: shipment?.carrier ? `Handed over to ${shipment.carrier}` : 'Awaiting courier dispatch', completed: false, active: false, timestamp: null },
       { key: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', desc: 'Courier rider on route to address', completed: false, active: false, timestamp: null },
       { key: 'DELIVERED', label: 'Delivered', desc: 'Package delivered to recipient', completed: false, active: false, timestamp: null },
     ];
@@ -77,7 +77,7 @@ export class CustomerOrdersService {
         })),
         shippingAddress: o.shippingAddress,
         trackingNumber: shipment?.trackingNumber || null,
-        carrier: shipment?.carrier || 'TCS Express Pakistan',
+        carrier: shipment?.carrier || null,
         paymentMethod: payment?.paymentMethod || 'Cash on Delivery (COD)',
         paymentStatus: payment?.status || 'PENDING',
         canCancel: ['PENDING', 'CONFIRMED'].includes(o.status),
@@ -134,16 +134,11 @@ export class CustomerOrdersService {
       customerNotes: order.customerNotes,
       timeline,
       tracking: shipment ? {
-        carrier: shipment.carrier || 'TCS Express Pakistan',
+        carrier: shipment.carrier,
         trackingNumber: shipment.trackingNumber,
         status: shipment.status,
-        estimatedDelivery: shipment.estimatedDelivery?.toISOString() || new Date(Date.now() + 2 * 86400000).toISOString(),
-      } : {
-        carrier: 'TCS Express Pakistan',
-        trackingNumber: `TCS-${Math.floor(100000000 + Math.random() * 900000000)}`,
-        status: 'DISPATCHED',
-        estimatedDelivery: new Date(Date.now() + 2 * 86400000).toISOString(),
-      },
+        estimatedDelivery: shipment.estimatedDelivery?.toISOString() || null,
+      } : null,
       payment: {
         method: payment?.paymentMethod || 'Cash on Delivery (COD)',
         status: payment?.status || 'PENDING',

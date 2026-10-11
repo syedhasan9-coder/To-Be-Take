@@ -776,6 +776,7 @@ export interface OrderDetailItem extends OrderListItem {
   returns: OrderReturnItem[];
   commissions: CommissionRecordItem[];
   statusHistory: OrderStatusHistoryDto[];
+  codSummary?: CodSummaryInfo;
 }
 
 export interface UpdateOrderStatusInput {
@@ -997,6 +998,14 @@ export interface ShipmentListItem {
   shippedAt?: string | Date | null;
   deliveredAt?: string | Date | null;
   notes?: string | null;
+  weightKg?: number | null;
+  pieces?: number | null;
+  shippingCharges?: number | null;
+  codAmount?: number | null;
+  bookingMode?: 'MANUAL' | 'API' | null;
+  recipientName?: string | null;
+  destinationCity?: string | null;
+  metadata?: Record<string, any> | null;
   createdAt: string | Date;
   updatedAt: string | Date;
 }
@@ -1008,6 +1017,18 @@ export interface CreateShipmentInput {
   trackingUrl?: string;
   estimatedDelivery?: string;
   notes?: string;
+  weightKg?: number;
+  pieces?: number;
+  shippingCharges?: number;
+  codAmount?: number;
+  recipientName?: string;
+  recipientPhone?: string;
+  destinationCity?: string;
+  destinationAddress?: string;
+}
+
+export interface ManualShipmentBookingInput extends CreateShipmentInput {
+  bookingMode?: 'MANUAL' | 'API';
 }
 
 export interface UpdateShipmentInput {
@@ -1019,6 +1040,49 @@ export interface UpdateShipmentInput {
   shippedDate?: string;
   deliveredDate?: string;
   notes?: string;
+}
+
+// Courier Integration Types
+export type CourierCode = 'TCS' | 'LEOPARDS' | 'TRAX' | 'MANUAL';
+
+export interface CourierProviderInfo {
+  code: string;
+  name: string;
+  isConfigured: boolean;
+  requiresManualAwb: boolean;
+  description: string;
+}
+
+// COD Collection & Settlement Types
+export interface CodSettlementInput {
+  remittanceReference: string;
+  amountReceived: number;
+  settlementDate?: string;
+  notes?: string;
+}
+
+export interface CodSettlementResult {
+  orderId: string;
+  orderNumber: string;
+  expectedCodAmount: number;
+  amountReceived: number;
+  difference: number;
+  reconciliationStatus: 'SETTLED' | 'DISCREPANCY';
+  paymentId?: string;
+  paymentStatus: PaymentStatusType;
+  settledAt: string;
+  notes?: string;
+}
+
+export interface CodSummaryInfo {
+  isCodOrder: boolean;
+  orderTotal: number;
+  alreadyPaidAmount: number;
+  expectedCodAmount: number;
+  reconciliationStatus: 'PENDING' | 'SETTLED' | 'DISCREPANCY' | 'NOT_APPLICABLE';
+  remittanceReference?: string;
+  amountReceived?: number;
+  settlementDate?: string;
 }
 
 // Reviews & Moderation Types
@@ -1454,6 +1518,32 @@ export interface OrderPlacementResponse {
   shippingAddress: string;
   estimatedDelivery: string;
   message: string;
+  checkoutUrl?: string | null;
+  checkoutPayload?: Record<string, any> | null;
+}
+
+export interface EasypaisaInitiateResponse {
+  postUrl: string;
+  params: {
+    storeId: string;
+    amount: string;
+    postBackURL: string;
+    orderRefNum: string;
+    expiryDate: string;
+    autoRedirect: string;
+    paymentMethod: string;
+    merchantHashedReq: string;
+  };
+}
+
+export interface PaymentCallbackResult {
+  success: boolean;
+  orderId?: string;
+  orderNumber?: string;
+  status: PaymentStatusType;
+  message: string;
+  transactionReference?: string;
+  failureReason?: string;
 }
 
 export interface CustomerReviewItem {

@@ -245,9 +245,15 @@ export const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.courierName}>
-                {trackingNumber ? `TCS Tracking: ${trackingNumber}` : 'Standard Courier Dispatch (TCS / Trax)'}
+                {trackingNumber
+                  ? `${order.shipments?.[0]?.carrier || order.tracking?.carrier || 'Courier'} Tracking: ${trackingNumber}`
+                  : 'Awaiting Courier Dispatch'}
               </Text>
-              <Text style={styles.courierSub}>Estimated transit time: 2-4 business days</Text>
+              <Text style={styles.courierSub}>
+                {trackingNumber
+                  ? 'Estimated transit time: 2-4 business days'
+                  : 'Tracking number will be assigned once booked with courier'}
+              </Text>
             </View>
           </View>
         </View>

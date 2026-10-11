@@ -46,8 +46,12 @@ export function OrderTrackingTimeline({
         <div className="courier-badge">
           <span className="courier-icon">🚚</span>
           <div>
-            <p className="courier-name">{carrier || 'TCS Express Pakistan'}</p>
-            {trackingNumber && <p className="tracking-no">Consignment No: <strong>{trackingNumber}</strong></p>}
+            <p className="courier-name">{carrier || (trackingNumber ? 'Courier Assigned' : 'Artisan / Fulfillment Hub')}</p>
+            {trackingNumber ? (
+              <p className="tracking-no">Consignment No: <strong>{trackingNumber}</strong></p>
+            ) : (
+              <p className="tracking-no" style={{ color: '#82948a', fontSize: '0.75rem' }}>Awaiting courier dispatch & booking</p>
+            )}
           </div>
         </div>
         <div className="current-status-tag">

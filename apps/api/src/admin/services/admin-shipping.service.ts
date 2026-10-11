@@ -1,9 +1,18 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { OrderStatus, Prisma, PrismaService, ShippingStatus } from '@tobetake/database';
-import { PaginatedResult, ShipmentListItem } from '@tobetake/shared-types';
+import {
+  CodSettlementInput,
+  CodSettlementResult,
+  CodSummaryInfo,
+  CourierProviderInfo,
+  PaginatedResult,
+  ShipmentListItem,
+} from '@tobetake/shared-types';
 import { AuthenticatedAdminUser } from '../decorators/current-user.decorator';
 import { CreateShipmentDto, ShippingQueryDto, UpdateShipmentDto } from '../dto/shipping.dto';
 import { AdminAuditService } from './admin-audit.service';
+import { CourierRegistryService } from '../../shipping/services/courier-registry.service';
+import { CodSettlementService } from '../../shipping/services/cod-settlement.service';
 
 @Injectable()
 export class AdminShippingService {
@@ -12,7 +21,62 @@ export class AdminShippingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AdminAuditService,
+    private readonly courierRegistry: CourierRegistryService,
+    private readonly codSettlementService: CodSettlementService,
   ) {}
+
+  /**
+   * Helper to format a Prisma Shipment record into a rich ShipmentListItem.
+   */
+  private formatShipment(s: any): ShipmentListItem {
+    let meta: Record<string, any> = {};
+    let cleanNotes: string | null = s.notes;
+
+    if (s.notes) {
+      try {
+        const parsed = JSON.parse(s.notes);
+        if (typeof parsed === 'object' && parsed !== null) {
+          meta = parsed;
+          cleanNotes = parsed.notes || parsed.remarks || null;
+        }
+      } catch {
+        // Plain text note
+      }
+    }
+
+    return {
+      id: s.id,
+      orderId: s.orderId,
+      orderNumber: s.order?.orderNumber,
+      carrier: s.carrier,
+      trackingNumber: s.trackingNumber,
+      trackingUrl: s.trackingUrl,
+      status: s.status,
+      estimatedDelivery: s.estimatedDelivery,
+      shippedDate: s.shippedDate,
+      deliveredDate: s.deliveredDate,
+      shippedAt: s.shippedDate,
+      deliveredAt: s.deliveredDate,
+      notes: cleanNotes,
+      weightKg: meta.weightKg !== undefined ? Number(meta.weightKg) : null,
+      pieces: meta.pieces !== undefined ? Number(meta.pieces) : null,
+      shippingCharges: meta.shippingCharges !== undefined ? Number(meta.shippingCharges) : null,
+      codAmount: meta.codAmount !== undefined ? Number(meta.codAmount) : null,
+      bookingMode: meta.bookingMode || null,
+      recipientName: meta.recipientName || null,
+      destinationCity: meta.destinationCity || null,
+      metadata: Object.keys(meta).length > 0 ? meta : null,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+    };
+  }
+
+  /**
+   * Return available courier providers and their credential configuration state.
+   */
+  getAvailableProviders(): CourierProviderInfo[] {
+    return this.courierRegistry.getAvailableProviders();
+  }
 
   /**
    * List shipments with carrier, tracking, and status filtering.
@@ -55,21 +119,7 @@ export class AdminShippingService {
     ]);
 
     return {
-      items: shipments.map((s) => ({
-        id: s.id,
-        orderId: s.orderId,
-        orderNumber: s.order.orderNumber,
-        carrier: s.carrier,
-        trackingNumber: s.trackingNumber,
-        trackingUrl: s.trackingUrl,
-        status: s.status,
-        estimatedDelivery: s.estimatedDelivery,
-        shippedDate: s.shippedDate,
-        deliveredDate: s.deliveredDate,
-        notes: s.notes,
-        createdAt: s.createdAt,
-        updatedAt: s.updatedAt,
-      })),
+      items: shipments.map((s) => this.formatShipment(s)),
       total,
       page,
       limit,
@@ -78,29 +128,114 @@ export class AdminShippingService {
   }
 
   /**
-   * Create shipment record for an order and update order timeline.
+   * Create shipment record for an order with genuine booking validation.
    */
   async createShipment(
     dto: CreateShipmentDto,
     admin: AuthenticatedAdminUser,
   ): Promise<ShipmentListItem> {
-    const order = await this.prisma.order.findUnique({ where: { id: dto.orderId } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: dto.orderId },
+      include: { customer: true, payments: true },
+    });
+
     if (!order) {
       throw new NotFoundException(`Order with ID '${dto.orderId}' was not found`);
     }
 
+    if (order.status === OrderStatus.CANCELLED) {
+      throw new BadRequestException('Cannot book a shipment for a cancelled order');
+    }
+
+    if (order.status === OrderStatus.DELIVERED) {
+      throw new BadRequestException('Order is already marked delivered');
+    }
+
+    const shippingAddress =
+      dto.destinationAddress ||
+      order.shippingAddress ||
+      '';
+
+    if (!shippingAddress.trim()) {
+      throw new BadRequestException('A valid shipping address is required before booking a courier shipment');
+    }
+
+    // Prevent duplicate active booking
+    const activeShipment = await this.prisma.shipment.findFirst({
+      where: {
+        orderId: dto.orderId,
+        status: { notIn: [ShippingStatus.FAILED] },
+      },
+    });
+
+    if (activeShipment) {
+      throw new BadRequestException(
+        `Order ${order.orderNumber} already has an active shipment (Carrier: ${activeShipment.carrier}, Tracking: ${activeShipment.trackingNumber}). Cannot create duplicate booking.`,
+      );
+    }
+
+    // Calculate server-verified COD requirement
+    const codSummary = await this.codSettlementService.calculateCodDetails(dto.orderId);
+    let resolvedCodAmount = 0;
+    if (codSummary.isCodOrder) {
+      resolvedCodAmount =
+        dto.codAmount !== undefined ? Number(dto.codAmount) : codSummary.expectedCodAmount;
+    }
+
+    const recipientName =
+      dto.recipientName ||
+      `${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim() ||
+      'Customer';
+
+    const recipientPhone = dto.recipientPhone || '';
+    const destinationCity = dto.destinationCity || 'Pakistan';
+
+    // Execute courier booking through registered provider
+    const bookingResult = await this.courierRegistry.bookShipment(dto.carrier, {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      recipientName,
+      recipientPhone,
+      destinationAddress: shippingAddress,
+      destinationCity,
+      weightKg: dto.weightKg || 0.5,
+      pieces: dto.pieces || 1,
+      codAmount: resolvedCodAmount,
+      shippingCharges: dto.shippingCharges || 0,
+      trackingNumber: dto.trackingNumber,
+      notes: dto.notes,
+    });
+
     const now = new Date();
+    const notesPayload = JSON.stringify({
+      bookingMode: bookingResult.bookingMode,
+      carrierCode: bookingResult.carrierCode,
+      weightKg: dto.weightKg || 0.5,
+      pieces: dto.pieces || 1,
+      shippingCharges: dto.shippingCharges || 0,
+      codAmount: resolvedCodAmount,
+      recipientName,
+      recipientPhone,
+      destinationCity,
+      destinationAddress: shippingAddress,
+      bookedBy: admin.id,
+      bookedByName: admin.username,
+      bookedAt: now.toISOString(),
+      notes: dto.notes || null,
+      rawResponse: bookingResult.rawResponse || null,
+    });
+
     const created = await this.prisma.$transaction(async (tx) => {
       const shipment = await tx.shipment.create({
         data: {
           orderId: dto.orderId,
-          carrier: dto.carrier,
-          trackingNumber: dto.trackingNumber,
-          trackingUrl: dto.trackingUrl || null,
+          carrier: bookingResult.carrier,
+          trackingNumber: bookingResult.trackingNumber,
+          trackingUrl: bookingResult.trackingUrl || dto.trackingUrl || null,
           estimatedDelivery: dto.estimatedDelivery ? new Date(dto.estimatedDelivery) : null,
           shippedDate: now,
           status: ShippingStatus.IN_TRANSIT,
-          notes: dto.notes || null,
+          notes: notesPayload,
         },
         include: {
           order: { select: { orderNumber: true } },
@@ -121,7 +256,7 @@ export class AdminShippingService {
             orderId: dto.orderId,
             fromStatus: order.status,
             toStatus: OrderStatus.SHIPPED,
-            notes: `Dispatched with ${dto.carrier} (Tracking: ${dto.trackingNumber})`,
+            notes: `Dispatched with ${bookingResult.carrier} (Tracking: ${bookingResult.trackingNumber}, Mode: ${bookingResult.bookingMode})`,
             actorId: admin.id,
             actorName: admin.username,
           },
@@ -139,26 +274,14 @@ export class AdminShippingService {
       details: {
         orderId: dto.orderId,
         orderNumber: order.orderNumber,
-        carrier: dto.carrier,
-        trackingNumber: dto.trackingNumber,
+        carrier: bookingResult.carrier,
+        trackingNumber: bookingResult.trackingNumber,
+        bookingMode: bookingResult.bookingMode,
+        codAmount: resolvedCodAmount,
       },
     });
 
-    return {
-      id: created.id,
-      orderId: created.orderId,
-      orderNumber: created.order.orderNumber,
-      carrier: created.carrier,
-      trackingNumber: created.trackingNumber,
-      trackingUrl: created.trackingUrl,
-      status: created.status,
-      estimatedDelivery: created.estimatedDelivery,
-      shippedDate: created.shippedDate,
-      deliveredDate: created.deliveredDate,
-      notes: created.notes,
-      createdAt: created.createdAt,
-      updatedAt: created.updatedAt,
-    };
+    return this.formatShipment(created);
   }
 
   /**
@@ -192,7 +315,21 @@ export class AdminShippingService {
     if (dto.deliveredDate !== undefined) {
       data.deliveredDate = dto.deliveredDate ? new Date(dto.deliveredDate) : null;
     }
-    if (dto.notes !== undefined) data.notes = dto.notes;
+
+    if (dto.notes !== undefined) {
+      // Preserve existing metadata JSON if present
+      let existingMeta = {};
+      try {
+        existingMeta = JSON.parse(existing.notes || '{}');
+      } catch {
+        existingMeta = {};
+      }
+      data.notes = JSON.stringify({
+        ...existingMeta,
+        notes: dto.notes,
+        updatedAt: new Date().toISOString(),
+      });
+    }
 
     const now = new Date();
     if (dto.status === ShippingStatus.DELIVERED && !data.deliveredDate) {
@@ -245,20 +382,24 @@ export class AdminShippingService {
       },
     });
 
-    return {
-      id: updated.id,
-      orderId: updated.orderId,
-      orderNumber: updated.order.orderNumber,
-      carrier: updated.carrier,
-      trackingNumber: updated.trackingNumber,
-      trackingUrl: updated.trackingUrl,
-      status: updated.status,
-      estimatedDelivery: updated.estimatedDelivery,
-      shippedDate: updated.shippedDate,
-      deliveredDate: updated.deliveredDate,
-      notes: updated.notes,
-      createdAt: updated.createdAt,
-      updatedAt: updated.updatedAt,
-    };
+    return this.formatShipment(updated);
+  }
+
+  /**
+   * Get calculated COD details for an order.
+   */
+  async getCodDetails(orderId: string): Promise<CodSummaryInfo> {
+    return this.codSettlementService.calculateCodDetails(orderId);
+  }
+
+  /**
+   * Record courier COD remittance settlement with reconciliation verification.
+   */
+  async recordCodSettlement(
+    orderId: string,
+    dto: CodSettlementInput,
+    admin: AuthenticatedAdminUser,
+  ): Promise<CodSettlementResult> {
+    return this.codSettlementService.recordRemittance(orderId, dto, admin);
   }
 }

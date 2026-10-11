@@ -22,8 +22,11 @@ import { SellerProfileService } from './services/seller-profile.service';
 import { SellerNotificationsController } from './controllers/seller-notifications.controller';
 import { SellerNotificationsService } from './services/seller-notifications.service';
 
+import { ShippingModule } from '../shipping/shipping.module';
+import { AuthModule } from '../auth/auth.module';
+
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, ShippingModule, AuthModule],
   controllers: [
     SellerDashboardController,
     SellerProductsController,

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrderStatus, PaymentStatus, PrismaService } from '@tobetake/database';
 import { AdminAuditService } from './admin-audit.service';
 import { AdminOrdersService } from './admin-orders.service';
+import { CodSettlementService } from '../../shipping/services/cod-settlement.service';
 
 describe('AdminOrdersService', () => {
   let service: AdminOrdersService;
@@ -125,11 +126,23 @@ describe('AdminOrdersService', () => {
       recordLog: jest.fn().mockResolvedValue(undefined),
     };
 
+    const mockCodSettlement = {
+      calculateCodDetails: jest.fn().mockResolvedValue({
+        isCodOrder: false,
+        orderTotal: 2750,
+        alreadyPaidAmount: 2750,
+        expectedCodAmount: 0,
+        reconciliationStatus: 'NOT_APPLICABLE',
+      }),
+      recordRemittance: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminOrdersService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: AdminAuditService, useValue: mockAudit },
+        { provide: CodSettlementService, useValue: mockCodSettlement },
       ],
     }).compile();
 

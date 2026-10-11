@@ -53,8 +53,11 @@ import { AdminShippingController } from './controllers/admin-shipping.controller
 import { AdminReviewsController } from './controllers/admin-reviews.controller';
 import { AdminNotificationsController } from './controllers/admin-notifications.controller';
 
+import { ShippingModule } from '../shipping/shipping.module';
+import { AuthModule } from '../auth/auth.module';
+
 @Module({
-  imports: [ConfigModule, DatabaseModule],
+  imports: [ConfigModule, DatabaseModule, ShippingModule, AuthModule],
   controllers: [
     AdminDashboardController,
     AdminSearchController,

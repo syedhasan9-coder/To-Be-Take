@@ -4,16 +4,22 @@ import {
   ForbiddenException,
   Injectable,
   Logger,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService, UserStatus } from '@tobetake/database';
 import { AuthenticatedCustomerUser } from '../decorators/current-customer.decorator';
 
+import { TokenService } from '../../common/services/token.service';
+
 @Injectable()
 export class CustomerAuthGuard implements CanActivate {
   private readonly logger = new Logger(CustomerAuthGuard.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly tokenService?: TokenService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -39,18 +45,30 @@ export class CustomerAuthGuard implements CanActivate {
       );
     }
 
-    // 2. Lookup customer in database
+    // 2. If token is in JWT format (3 parts separated by dots), verify cryptographic signature & expiration
+    let userIdToLookup = resolvedIdentifier;
+    if (resolvedIdentifier.includes('.')) {
+      const verifier = this.tokenService || new TokenService();
+      const verifiedPayload = verifier.verifyToken(resolvedIdentifier);
+      if (!verifiedPayload) {
+        this.logger.warn('Token signature verification failed or token has expired.');
+        throw new UnauthorizedException('Invalid or expired authentication credentials.');
+      }
+      userIdToLookup = verifiedPayload.sub;
+    }
+
+    // 3. Lookup customer in database
     const isUUID =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        resolvedIdentifier,
+        userIdToLookup,
       );
 
     const user = await this.prisma.user.findFirst({
       where: {
         OR: [
-          ...(isUUID ? [{ id: resolvedIdentifier }] : []),
-          { email: resolvedIdentifier.toLowerCase() },
-          { username: resolvedIdentifier },
+          ...(isUUID ? [{ id: userIdToLookup }] : []),
+          { email: userIdToLookup.toLowerCase() },
+          { username: userIdToLookup },
         ],
         isDeleted: false,
       },

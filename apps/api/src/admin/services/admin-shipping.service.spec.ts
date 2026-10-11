@@ -1,7 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService, ShippingStatus } from '@tobetake/database';
 import { AdminAuditService } from './admin-audit.service';
 import { AdminShippingService } from './admin-shipping.service';
+import { CourierRegistryService } from '../../shipping/services/courier-registry.service';
+import { CodSettlementService } from '../../shipping/services/cod-settlement.service';
+import { ManualCourierProvider } from '../../shipping/providers/manual-courier.provider';
+import { TcsCourierProvider } from '../../shipping/providers/tcs-courier.provider';
+import { LeopardsCourierProvider } from '../../shipping/providers/leopards-courier.provider';
 
 describe('AdminShippingService', () => {
   let service: AdminShippingService;
@@ -56,6 +62,7 @@ describe('AdminShippingService', () => {
           updatedAt: new Date(),
           order: { orderNumber: 'ORD-1001', status: 'SHIPPED' },
         }),
+        findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({
           id: 'ship-2',
           orderId: 'order-1',
@@ -63,6 +70,7 @@ describe('AdminShippingService', () => {
           trackingNumber: 'LEO-987654',
           status: ShippingStatus.IN_TRANSIT,
           order: { orderNumber: 'ORD-1001' },
+          notes: JSON.stringify({ bookingMode: 'MANUAL' }),
         }),
         update: jest.fn().mockResolvedValue({
           id: 'ship-1',
@@ -72,6 +80,7 @@ describe('AdminShippingService', () => {
           status: ShippingStatus.DELIVERED,
           deliveredDate: new Date(),
           order: { orderNumber: 'ORD-1001' },
+          notes: null,
         }),
       },
       order: {
@@ -79,8 +88,17 @@ describe('AdminShippingService', () => {
           id: 'order-1',
           orderNumber: 'ORD-1001',
           status: 'PROCESSING',
+          total: '2000',
+          shippingAddress: 'Main Boulevard, Lahore',
+          customer: { firstName: 'Ali', lastName: 'Khan' },
+          payments: [],
         }),
         update: jest.fn().mockResolvedValue({ id: 'order-1' }),
+      },
+      payment: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        update: jest.fn().mockResolvedValue({}),
+        create: jest.fn().mockResolvedValue({}),
       },
       orderStatusHistory: {
         create: jest.fn().mockResolvedValue({ id: 'history-1' }),
@@ -92,9 +110,17 @@ describe('AdminShippingService', () => {
       recordLog: jest.fn().mockResolvedValue(undefined),
     };
 
+    const mockConfig = { get: jest.fn().mockReturnValue(null) };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminShippingService,
+        ManualCourierProvider,
+        TcsCourierProvider,
+        LeopardsCourierProvider,
+        CourierRegistryService,
+        CodSettlementService,
+        { provide: ConfigService, useValue: mockConfig },
         { provide: PrismaService, useValue: mockPrisma },
         { provide: AdminAuditService, useValue: mockAudit },
       ],

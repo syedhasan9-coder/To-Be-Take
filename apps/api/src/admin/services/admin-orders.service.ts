@@ -4,6 +4,7 @@ import { OrderDetailItem, OrderListItem, PaginatedResult } from '@tobetake/share
 import { AuthenticatedAdminUser } from '../decorators/current-user.decorator';
 import { OrderQueryDto, UpdateOrderStatusDto } from '../dto/order.dto';
 import { AdminAuditService } from './admin-audit.service';
+import { CodSettlementService } from '../../shipping/services/cod-settlement.service';
 
 @Injectable()
 export class AdminOrdersService {
@@ -12,6 +13,7 @@ export class AdminOrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AdminAuditService,
+    private readonly codSettlementService: CodSettlementService,
   ) {}
 
   /**
@@ -229,21 +231,47 @@ export class AdminOrdersService {
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,
       })),
-      shipments: order.shipments.map((s) => ({
-        id: s.id,
-        orderId: s.orderId,
-        orderNumber: order.orderNumber,
-        carrier: s.carrier,
-        trackingNumber: s.trackingNumber,
-        trackingUrl: s.trackingUrl,
-        status: s.status,
-        estimatedDelivery: s.estimatedDelivery,
-        shippedDate: s.shippedDate,
-        deliveredDate: s.deliveredDate,
-        notes: s.notes,
-        createdAt: s.createdAt,
-        updatedAt: s.updatedAt,
-      })),
+      shipments: order.shipments.map((s) => {
+        let meta: Record<string, any> = {};
+        let cleanNotes: string | null = s.notes;
+        if (s.notes) {
+          try {
+            const parsed = JSON.parse(s.notes);
+            if (typeof parsed === 'object' && parsed !== null) {
+              meta = parsed;
+              cleanNotes = parsed.notes || parsed.remarks || null;
+            }
+          } catch {
+            // plain text note
+          }
+        }
+        return {
+          id: s.id,
+          orderId: s.orderId,
+          orderNumber: order.orderNumber,
+          carrier: s.carrier,
+          trackingNumber: s.trackingNumber,
+          trackingUrl: s.trackingUrl,
+          status: s.status,
+          estimatedDelivery: s.estimatedDelivery,
+          shippedDate: s.shippedDate,
+          deliveredDate: s.deliveredDate,
+          shippedAt: s.shippedDate,
+          deliveredAt: s.deliveredDate,
+          notes: cleanNotes,
+          weightKg: meta.weightKg !== undefined ? Number(meta.weightKg) : null,
+          pieces: meta.pieces !== undefined ? Number(meta.pieces) : null,
+          shippingCharges: meta.shippingCharges !== undefined ? Number(meta.shippingCharges) : null,
+          codAmount: meta.codAmount !== undefined ? Number(meta.codAmount) : null,
+          bookingMode: meta.bookingMode || null,
+          recipientName: meta.recipientName || null,
+          destinationCity: meta.destinationCity || null,
+          metadata: Object.keys(meta).length > 0 ? meta : null,
+          createdAt: s.createdAt,
+          updatedAt: s.updatedAt,
+        };
+      }),
+      codSummary: await this.codSettlementService.calculateCodDetails(order.id),
       returns: order.returns.map((r) => ({
         id: r.id,
         returnNumber: r.returnNumber,
@@ -311,6 +339,22 @@ export class AdminOrdersService {
 
     if (existing.status === OrderStatus.CANCELLED && dto.status !== OrderStatus.CANCELLED) {
       throw new BadRequestException('Cannot change status of a cancelled order');
+    }
+
+    // Enforce strict order lifecycle state transitions
+    const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+      [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.CANCELLED],
+      [OrderStatus.PROCESSING]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
+      [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
+      [OrderStatus.DELIVERED]: [],
+      [OrderStatus.CANCELLED]: [],
+    };
+
+    if (existing.status !== dto.status && !ALLOWED_TRANSITIONS[existing.status]?.includes(dto.status)) {
+      throw new BadRequestException(
+        `Invalid order status transition from ${existing.status} to ${dto.status}`,
+      );
     }
 
     const timestampUpdates: Partial<{

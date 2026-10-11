@@ -11,6 +11,7 @@ import { CustomerOrdersService } from './services/customer-orders.service';
 import { CustomerReviewsService } from './services/customer-reviews.service';
 import { CustomerNotificationsService } from './services/customer-notifications.service';
 import { CustomerProfileService } from './services/customer-profile.service';
+import { EasypaisaService } from '../payments/services/easypaisa.service';
 
 describe('Customer Marketplace Services', () => {
   let storefrontService: CustomerStorefrontService;
@@ -310,6 +311,9 @@ describe('Customer Marketplace Services', () => {
         customerNotification: {
           create: jest.fn().mockResolvedValue({ id: 'notif-1' }),
         },
+        orderStatusHistory: {
+          create: jest.fn().mockResolvedValue({ id: 'osh-1' }),
+        },
         cartItem: {
           deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
         },
@@ -320,6 +324,12 @@ describe('Customer Marketplace Services', () => {
   const mockPasswordService = {
     hash: jest.fn().mockResolvedValue('hashed_pw'),
     compare: jest.fn().mockResolvedValue(true),
+  };
+
+  const mockEasypaisaService = {
+    isConfigured: jest.fn().mockReturnValue(false),
+    initiatePayment: jest.fn(),
+    processCallback: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -337,6 +347,7 @@ describe('Customer Marketplace Services', () => {
         CustomerProfileService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: PasswordService, useValue: mockPasswordService },
+        { provide: EasypaisaService, useValue: mockEasypaisaService },
       ],
     }).compile();
 
@@ -432,7 +443,7 @@ describe('Customer Marketplace Services', () => {
       expect(preview.grandTotal).toBe(7650);
     });
 
-    it('should place order with Pakistani phone and COD payment method', async () => {
+    it('should place order with Pakistani phone and COD payment method without creating fake shipment', async () => {
       const order = await checkoutService.placeOrder('user-001', {
         shippingAddress: {
           recipientName: 'Bilal Ahmed',
@@ -448,6 +459,41 @@ describe('Customer Marketplace Services', () => {
       expect(order.orderNumber).toBeDefined();
       expect(order.total).toBe(9000);
       expect(order.status).toBe(OrderStatus.CONFIRMED);
+      expect(order.paymentStatus).toBe(PaymentStatus.PENDING);
+      expect(order.paymentMethod).toBe('COD');
+    });
+
+    it('should reject unsupported online payment methods server-side', async () => {
+      await expect(
+        checkoutService.placeOrder('user-001', {
+          shippingAddress: {
+            recipientName: 'Bilal Ahmed',
+            phone: '+92 300 1234567',
+            streetAddress: 'House 42, Street 8',
+            city: 'Lahore',
+            province: 'Punjab',
+            postalCode: '54000',
+          },
+          paymentMethod: 'JAZZCASH',
+        }),
+      ).rejects.toThrow('currently unavailable');
+    });
+
+    it('should safely reject unconfigured Easypaisa gateway', async () => {
+      mockEasypaisaService.isConfigured.mockReturnValueOnce(false);
+      await expect(
+        checkoutService.placeOrder('user-001', {
+          shippingAddress: {
+            recipientName: 'Bilal Ahmed',
+            phone: '+92 300 1234567',
+            streetAddress: 'House 42, Street 8',
+            city: 'Lahore',
+            province: 'Punjab',
+            postalCode: '54000',
+          },
+          paymentMethod: 'EASYPAISA',
+        }),
+      ).rejects.toThrow('currently unconfigured');
     });
   });
 
@@ -463,6 +509,32 @@ describe('Customer Marketplace Services', () => {
       const profile = await profileService.getProfile('user-001');
       expect(profile.username).toBe('buyer_bilal');
       expect(profile.totalOrders).toBe(1);
+    });
+
+    it('should return null tracking when no shipment has been booked for order', async () => {
+      mockPrismaService.order.findFirst.mockResolvedValueOnce({
+        id: 'order-noshipment',
+        orderNumber: 'ORD-2026-9999',
+        customerId: 'user-001',
+        status: OrderStatus.CONFIRMED,
+        paymentStatus: PaymentStatus.PENDING,
+        currency: 'PKR',
+        subtotal: 9000,
+        shippingTotal: 0,
+        taxTotal: 0,
+        discountTotal: 0,
+        total: 9000,
+        createdAt: new Date(),
+        shippingAddress: 'House 42, DHA Phase 5, Lahore, Pakistan',
+        items: [],
+        shipments: [],
+        payments: [{ paymentMethod: 'COD', status: PaymentStatus.PENDING, amount: 9000 }],
+        returns: [],
+      });
+
+      const detail = await ordersService.getOrderDetail('user-001', 'order-noshipment');
+      expect(detail.tracking).toBeNull();
+      expect(detail.payment.status).toBe(PaymentStatus.PENDING);
     });
   });
 });

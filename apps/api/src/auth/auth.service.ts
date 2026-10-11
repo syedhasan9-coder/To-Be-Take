@@ -4,10 +4,12 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma, PrismaService, UserStatus } from '@tobetake/database';
 import { PasswordService } from '../common/services/password.service';
+import { TokenService } from '../common/services/token.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterAdminDto } from './dto/register-admin.dto';
 import { RegisterSellerDto } from './dto/register-seller.dto';
@@ -21,6 +23,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
+    @Optional() private readonly tokenService?: TokenService,
   ) {}
 
   // Register a new Admin user
@@ -118,7 +121,12 @@ export class AuthService {
         status: newUser.status,
         isEmailVerified: newUser.isEmailVerified,
         isMobileVerified: newUser.isMobileVerified,
-        token: newUser.id,
+        token: this.createToken({
+          id: newUser.id,
+          username: newUser.username,
+          email: newUser.email,
+          roleCode: newUser.role.code,
+        }),
         createdAt: newUser.createdAt,
         updatedAt: newUser.updatedAt,
       });
@@ -229,7 +237,12 @@ export class AuthService {
         status: newUser.status,
         isEmailVerified: newUser.isEmailVerified,
         isMobileVerified: newUser.isMobileVerified,
-        token: newUser.id,
+        token: this.createToken({
+          id: newUser.id,
+          username: newUser.username,
+          email: newUser.email,
+          roleCode: newUser.role.code,
+        }),
         createdAt: newUser.createdAt,
         updatedAt: newUser.updatedAt,
       });
@@ -337,7 +350,12 @@ export class AuthService {
         status: newUser.status,
         isEmailVerified: newUser.isEmailVerified,
         isMobileVerified: newUser.isMobileVerified,
-        token: newUser.id,
+        token: this.createToken({
+          id: newUser.id,
+          username: newUser.username,
+          email: newUser.email,
+          roleCode: newUser.role.code,
+        }),
         createdAt: newUser.createdAt,
         updatedAt: newUser.updatedAt,
       });
@@ -499,9 +517,24 @@ export class AuthService {
       status: user.status,
       isEmailVerified: user.isEmailVerified,
       isMobileVerified: user.isMobileVerified,
-      token: user.id,
+      token: this.createToken({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        roleCode: user.role.code,
+      }),
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     });
+  }
+
+  private createToken(user: {
+    id: string;
+    username: string;
+    email: string;
+    roleCode: string;
+  }): string {
+    const service = this.tokenService || new TokenService();
+    return service.generateToken(user);
   }
 }

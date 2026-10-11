@@ -9,6 +9,8 @@ import { DepartmentsModule } from './departments/departments.module';
 import { AdminModule } from './admin/admin.module';
 import { SellerModule } from './seller/seller.module';
 import { CustomerModule } from './customer/customer.module';
+import { PaymentsModule } from './payments/payments.module';
+import { ShippingModule } from './shipping/shipping.module';
 import configuration, { ThrottlerConfig } from './config/configuration';
 
 @Module({
@@ -48,6 +50,8 @@ import configuration, { ThrottlerConfig } from './config/configuration';
     AdminModule,
     SellerModule,
     CustomerModule,
+    PaymentsModule,
+    ShippingModule,
   ],
   providers: [
     {

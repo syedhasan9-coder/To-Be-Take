@@ -317,25 +317,42 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
           </View>
           <View style={styles.optionsList}>
             {[
-              { key: 'COD', title: 'Cash on Delivery (COD)', sub: 'Pay cash to TCS/Leopards courier upon delivery' },
-              { key: 'JAZZCASH', title: 'JazzCash Mobile Wallet', sub: 'Instant mobile account payment' },
-              { key: 'EASYPAISA', title: 'EasyPaisa Wallet', sub: 'Quick payment via EasyPaisa app or OTP' },
-              { key: 'RAAST', title: 'Raast (State Bank of Pakistan)', sub: 'Zero-fee instant bank transfer' },
-              { key: 'BANK_TRANSFER', title: '1Link Direct Bank Transfer', sub: 'Online banking IBFT transfer' },
+              { key: 'COD', title: 'Cash on Delivery (COD)', sub: 'Pay cash to courier upon delivery', available: true },
+              { key: 'EASYPAISA', title: 'EasyPaisa Wallet', sub: 'Online checkout (requires active merchant setup)', available: true, badge: 'Merchant Setup Required' },
+              { key: 'JAZZCASH', title: 'JazzCash Mobile Wallet', sub: 'Instant mobile account payment', available: false, badge: 'Coming Soon' },
+              { key: 'RAAST', title: 'Raast (State Bank of Pakistan)', sub: 'Zero-fee instant bank transfer', available: false, badge: 'Coming Soon' },
+              { key: 'BANK_TRANSFER', title: '1Link Direct Bank Transfer', sub: 'Online banking IBFT transfer', available: false, badge: 'Coming Soon' },
             ].map((method) => {
               const isSelected = paymentMethod === method.key;
+              const isDisabled = !method.available;
               return (
                 <TouchableOpacity
                   key={method.key}
-                  style={[styles.optionCard, isSelected && styles.selectedOption]}
-                  onPress={() => setPaymentMethod(method.key as CustomerPaymentMethodType)}
+                  disabled={isDisabled}
+                  style={[
+                    styles.optionCard,
+                    isSelected && styles.selectedOption,
+                    isDisabled && { opacity: 0.5 },
+                  ]}
+                  onPress={() => {
+                    if (method.available) {
+                      setPaymentMethod(method.key as CustomerPaymentMethodType);
+                    }
+                  }}
                   activeOpacity={0.8}
                 >
                   <View style={styles.radio}>
                     {isSelected && <View style={styles.radioInner} />}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.optionTitle}>{method.title}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.optionTitle}>{method.title}</Text>
+                      {method.badge && (
+                        <Text style={{ fontSize: 10, color: isDisabled ? '#92400e' : '#0369a1', fontWeight: '700' }}>
+                          ({method.badge})
+                        </Text>
+                      )}
+                    </View>
                     <Text style={styles.optionSub}>{method.sub}</Text>
                   </View>
                 </TouchableOpacity>

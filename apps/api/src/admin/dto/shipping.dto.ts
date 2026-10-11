@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ShippingStatus } from '@tobetake/database';
 
@@ -45,7 +45,65 @@ export class CreateShipmentDto {
 
   @IsOptional()
   @IsString()
+  recipientName?: string;
+
+  @IsOptional()
+  @IsString()
+  recipientPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  destinationCity?: string;
+
+  @IsOptional()
+  @IsString()
+  destinationAddress?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.01)
+  weightKg?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  pieces?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  shippingCharges?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  codAmount?: number;
+
+  @IsOptional()
+  @IsString()
   estimatedDelivery?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class RecordCodSettlementDto {
+  @IsString()
+  remittanceReference!: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  amountReceived!: number;
+
+  @IsOptional()
+  @IsString()
+  settlementDate?: string;
 
   @IsOptional()
   @IsString()

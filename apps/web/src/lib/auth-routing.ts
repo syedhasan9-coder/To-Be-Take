@@ -80,8 +80,16 @@ export function getClientAuthState(): ResolvedAuthState {
 export function sanitizeRedirectUrl(url: string | null | undefined, fallback = '/'): string {
   if (!url || typeof url !== 'string') return fallback;
   const trimmed = url.trim();
-  // Ensure it starts with / and not // (prevents open redirect attacks)
-  if (trimmed.startsWith('/') && !trimmed.startsWith('//') && !trimmed.includes('javascript:')) {
+  // Ensure it starts with / and not // or /\ (prevents open redirect attacks via protocol-relative URLs)
+  if (
+    trimmed.startsWith('/') &&
+    !trimmed.startsWith('//') &&
+    !trimmed.startsWith('/\\') &&
+    !trimmed.includes('\\') &&
+    !trimmed.includes('javascript:') &&
+    !trimmed.includes('data:') &&
+    !trimmed.includes('vbscript:')
+  ) {
     // Disallow redirecting directly back into login pages
     if (trimmed.startsWith('/login')) {
       return fallback;

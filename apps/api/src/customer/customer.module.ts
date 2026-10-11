@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module';
 import { PasswordService } from '../common/services/password.service';
+import { PaymentsModule } from '../payments/payments.module';
+import { AuthModule } from '../auth/auth.module';
 
 // Guards
 import { CustomerAuthGuard } from './guards/customer-auth.guard';
@@ -32,7 +34,7 @@ import { CustomerNotificationsService } from './services/customer-notifications.
 import { CustomerProfileService } from './services/customer-profile.service';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, PaymentsModule, AuthModule],
   controllers: [
     CustomerStorefrontController,
     CustomerCategoriesController,

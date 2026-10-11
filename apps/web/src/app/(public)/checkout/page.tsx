@@ -468,28 +468,33 @@ function CheckoutContent(): React.ReactElement {
               {/* JazzCash */}
               <label
                 style={{
-                  border: '1.5px solid',
-                  borderColor: paymentMethod === 'JAZZCASH' ? '#14291f' : '#e8e3d9',
-                  background: paymentMethod === 'JAZZCASH' ? '#fdfcf7' : '#ffffff',
+                  border: '1.5px solid #e8e3d9',
+                  background: '#fbfbfa',
                   borderRadius: '12px',
                   padding: '1rem',
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: '0.75rem',
-                  cursor: 'pointer',
+                  cursor: 'not-allowed',
+                  opacity: 0.65,
                 }}
               >
                 <input
                   type="radio"
                   name="payment"
-                  checked={paymentMethod === 'JAZZCASH'}
-                  onChange={() => setPaymentMethod('JAZZCASH')}
+                  disabled
+                  checked={false}
                   style={{ marginTop: '3px' }}
                 />
                 <div>
-                  <strong>📱 JazzCash Mobile Wallet</strong>
-                  <p style={{ fontSize: '0.75rem', color: '#526359', margin: '0.2rem 0 0' }}>
-                    Instant digital payment via your registered JazzCash mobile account (+92 30X).
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <strong>📱 JazzCash Mobile Wallet</strong>
+                    <span style={{ fontSize: '0.6875rem', background: '#fef3c7', color: '#92400e', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>
+                      Coming Soon (Pending Verification)
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#71717a', margin: '0.2rem 0 0' }}>
+                    Instant digital payment via JazzCash mobile account. Currently undergoing merchant verification.
                   </p>
                 </div>
               </label>
@@ -516,9 +521,14 @@ function CheckoutContent(): React.ReactElement {
                   style={{ marginTop: '3px' }}
                 />
                 <div>
-                  <strong>🟢 Easypaisa Mobile Account / QR</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <strong>🟢 Easypaisa Mobile Account / QR</strong>
+                    <span style={{ fontSize: '0.6875rem', background: '#e0f2fe', color: '#0369a1', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>
+                      Requires Merchant Setup
+                    </span>
+                  </div>
                   <p style={{ fontSize: '0.75rem', color: '#526359', margin: '0.2rem 0 0' }}>
-                    Direct checkout through Telenor Easypaisa wallet balance or debit card.
+                    Direct checkout through Telenor Easypaisa wallet or debit card. (Requires active merchant credentials in server environment; select COD if unconfigured).
                   </p>
                 </div>
               </label>
@@ -526,28 +536,33 @@ function CheckoutContent(): React.ReactElement {
               {/* Raast */}
               <label
                 style={{
-                  border: '1.5px solid',
-                  borderColor: paymentMethod === 'RAAST' ? '#14291f' : '#e8e3d9',
-                  background: paymentMethod === 'RAAST' ? '#fdfcf7' : '#ffffff',
+                  border: '1.5px solid #e8e3d9',
+                  background: '#fbfbfa',
                   borderRadius: '12px',
                   padding: '1rem',
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: '0.75rem',
-                  cursor: 'pointer',
+                  cursor: 'not-allowed',
+                  opacity: 0.65,
                 }}
               >
                 <input
                   type="radio"
                   name="payment"
-                  checked={paymentMethod === 'RAAST'}
-                  onChange={() => setPaymentMethod('RAAST')}
+                  disabled
+                  checked={false}
                   style={{ marginTop: '3px' }}
                 />
                 <div>
-                  <strong>⚡ Raast Instant P2M (SBP)</strong>
-                  <p style={{ fontSize: '0.75rem', color: '#526359', margin: '0.2rem 0 0' }}>
-                    State Bank of Pakistan real-time zero fee bank settlement.
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <strong>⚡ Raast Instant P2M (SBP)</strong>
+                    <span style={{ fontSize: '0.6875rem', background: '#fef3c7', color: '#92400e', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>
+                      Coming Soon (SBP Registration)
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#71717a', margin: '0.2rem 0 0' }}>
+                    State Bank of Pakistan real-time merchant settlement. Currently undergoing gateway onboarding.
                   </p>
                 </div>
               </label>
@@ -555,28 +570,33 @@ function CheckoutContent(): React.ReactElement {
               {/* Bank Transfer */}
               <label
                 style={{
-                  border: '1.5px solid',
-                  borderColor: paymentMethod === 'BANK_TRANSFER' ? '#14291f' : '#e8e3d9',
-                  background: paymentMethod === 'BANK_TRANSFER' ? '#fdfcf7' : '#ffffff',
+                  border: '1.5px solid #e8e3d9',
+                  background: '#fbfbfa',
                   borderRadius: '12px',
                   padding: '1rem',
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: '0.75rem',
-                  cursor: 'pointer',
+                  cursor: 'not-allowed',
+                  opacity: 0.65,
                 }}
               >
                 <input
                   type="radio"
                   name="payment"
-                  checked={paymentMethod === 'BANK_TRANSFER'}
-                  onChange={() => setPaymentMethod('BANK_TRANSFER')}
+                  disabled
+                  checked={false}
                   style={{ marginTop: '3px' }}
                 />
                 <div>
-                  <strong>🏛️ Direct 1Link Bank Transfer (IBFT)</strong>
-                  <p style={{ fontSize: '0.75rem', color: '#526359', margin: '0.2rem 0 0' }}>
-                    Meezan Bank / Habib Bank Limited (HBL) / Habib Metropolitan.
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <strong>🏛️ Direct 1Link Bank Transfer (IBFT)</strong>
+                    <span style={{ fontSize: '0.6875rem', background: '#fef3c7', color: '#92400e', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>
+                      Coming Soon (1Link Audit)
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#71717a', margin: '0.2rem 0 0' }}>
+                    Direct bank transfer via 1Link IBFT network. Currently undergoing institutional audit.
                   </p>
                 </div>
               </label>

@@ -4,16 +4,21 @@ import {
   ForbiddenException,
   Injectable,
   Logger,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService, UserStatus } from '@tobetake/database';
 import { AuthenticatedAdminUser } from '../decorators/current-user.decorator';
+import { TokenService } from '../../common/services/token.service';
 
 @Injectable()
 export class AdminAuthGuard implements CanActivate {
   private readonly logger = new Logger(AdminAuthGuard.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly tokenService?: TokenService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -93,18 +98,36 @@ export class AdminAuthGuard implements CanActivate {
       );
     }
 
-    // 2. Lookup user from database
+    // 3. If token is in JWT format (3 parts separated by dots), verify cryptographic signature & expiration
+    let userIdToLookup = resolvedIdentifier;
+    if (resolvedIdentifier.includes('.')) {
+      const verifier = this.tokenService || new TokenService();
+      const verifiedPayload = verifier.verifyToken(resolvedIdentifier);
+      if (!verifiedPayload) {
+        this.logger.warn('Token signature verification failed or token has expired.');
+        throw new UnauthorizedException('Invalid or expired authentication credentials.');
+      }
+      if (verifiedPayload.roleCode !== 'ADMIN' && verifiedPayload.roleCode !== 'SPADMIN') {
+        this.logger.warn(
+          `Token role boundary violation: User with role '${verifiedPayload.roleCode}' attempted to access admin resource`,
+        );
+        throw new ForbiddenException('Access denied. Administrator privileges required.');
+      }
+      userIdToLookup = verifiedPayload.sub;
+    }
+
+    // 4. Lookup user from database
     const isUUID =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        resolvedIdentifier,
+        userIdToLookup,
       );
 
     const user = await this.prisma.user.findFirst({
       where: {
         OR: [
-          ...(isUUID ? [{ id: resolvedIdentifier }] : []),
-          { email: resolvedIdentifier.toLowerCase() },
-          { username: resolvedIdentifier },
+          ...(isUUID ? [{ id: userIdToLookup }] : []),
+          { email: userIdToLookup.toLowerCase() },
+          { username: userIdToLookup },
         ],
         isDeleted: false,
       },
